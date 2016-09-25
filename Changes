@@ -1,0 +1,19 @@
+{{$NEXT}}
+
+0.004     2016-09-25 20:01:03+02:00 Europe/Stockholm
+  - :lvalue subroutines didn't work properly in perl 5.14, so depend on 5.16
+  - A few minor documentation fixups.
+
+0.003     2016-09-24 23:37:16+02:00 Europe/Stockholm
+  - Oops, wrong example in synopsis - fixed.
+
+0.002     2016-09-24 23:32:43+02:00 Europe/Stockholm
+  - Remade internals completely. Now should have less issues with overloads.
+  - Using Function::Parameters and therefore perl 5.14.
+  - Using Time::Zone::Olson for time zone handling.
+
+0.001     2016-09-19 06:43:18+02:00 Europe/Stockholm
+  - Added tests switched to using Sentinel, and fixed some minor issues.
+
+0.001     2016-09-19 03:32:58+02:00 Europe/Stockholm (TRIAL RELEASE)
+  - Initial version sees the light of day.
