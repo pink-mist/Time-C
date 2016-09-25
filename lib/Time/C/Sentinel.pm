@@ -1,3 +1,5 @@
+use strict;
+use warnings;
 package Time::C::Sentinel;
 
 use Exporter qw/ import /;
