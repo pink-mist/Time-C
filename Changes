@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.005     2016-09-26 13:49:03+02:00 Europe/Stockholm
   - Added strict and warnings to Time::C::Sentinel.
   - Fix bug in ->now() which would give wrong time unless your TZ was UTC.
   - Allow accessors to be chained.
