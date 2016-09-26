@@ -153,6 +153,14 @@ method gmtime ($c: $epoch) { $c->localtime( $epoch, 'UTC' ); }
 
 Creates a Time::C object for the current epoch in the timezone specified in C<$tz> or C<$ENV{TZ}> or C<UTC> if the first two are unspecified.
 
+=over
+
+=item C<$tz>
+
+This is the timezone specification, such as C<Europe/Stockholm> or C<UTC>. If not specified defaults to the timezone specified in C<$ENV{TZ}>, or C<UTC> if that is unspecified.
+
+=back
+
 =cut
 
 method now ($c: $tz = $ENV{TZ}) { $c->gmtime( time )->tz( $tz // 'UTC' ); }
