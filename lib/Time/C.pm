@@ -44,6 +44,8 @@ Makes manipulating time structures more convenient. Internally uses L<Time::Mome
 
 =head1 CONSTRUCTORS
 
+=cut
+
 =head2 new
 
   my $t = Time::C->new();
@@ -61,27 +63,27 @@ Creates a Time::C object for the specified time, or the current time if no C<$ye
 
 =item C<$year>
 
-This is the year. If not specified, C<new()> will call C<now_utc()>.
+This is the year. If not specified, C<new()> will call C<now_utc()>. The year is 1-based and starts with year 1 corresponding to 1 AD. Legal values are in the range 1-9999.
 
 =item C<$month>
 
-This is the month. If not specified it defaults to C<1>.
+This is the month. If not specified it defaults to C<1>. The month is 1-based and starts with month 1 corresponding to January. Legal values are in the range 1-12.
 
 =item C<$day>
 
-This is the day of the month. If not specified it defaults to C<1>.
+This is the day of the month. If not specified it defaults to C<1>. The day is 1-based and starts with day 1 being the first day of the month. Legal values are in the range 1-31.
 
 =item C<$hour>
 
-This is the hour. If not specified it defaults to C<0>.
+This is the hour. If not specified it defaults to C<0>. The hour is 0-based and starts with hour 0 corresponding to midnight. Legal values are in the range 0-23.
 
 =item C<$minute>
 
-This is the minute. If not specified it defaults to C<0>.
+This is the minute. If not specified it defaults to C<0>. The minute is 0-based and starts with minute 0 being the first minute of the hour. Legal values are in the range 0-59.
 
 =item C<$second>
 
-This is the second. If not specified it defaults to C<0>.
+This is the second. If not specified it defaults to C<0>. The second is 0-based and starts with second 0 being the first second of the minute. Legal values are in the range 0-59.
 
 =item C<$tz>
 
@@ -298,6 +300,8 @@ fun _parse ($str, $format = undef, $tz = 'UTC') {
 
 These accessors will work as C<LVALUE>s, meaning you can assign to them to change the time being represented.
 
+Note that an assignment expression will return the I<computed> value rather than the assigned value. This means that in the expression C<< my $wday = $t->day_of_week = 8; >> the value assigned to C<$wday> will be C<1> because the value returned from the day_of_week assignment wraps around after 7, and in fact starts the subsequent week. Similarly in the expression C<< my $mday = $t->month(2)->day_of_month = 30; >> the value assigned to C<$mday> will be either C<1> or C<2> depending on if it's a leap year or not, and the month will have changed to C<3>.
+
 =cut
 
 =head2 epoch
@@ -491,6 +495,8 @@ Returns or sets the current year, updating the epoch accordingly.
 
 If the form C<< $t->year($new_year) >> is used, it likewise sets the current year but returns the entire object.
 
+The year is 1-based where the year 1 corresponds to 1 AD. Legal values are in the range 1-9999.
+
 =cut
 
 method year ($t: $new_year = undef) :lvalue {
@@ -522,6 +528,8 @@ Returns or sets the current quarter of the year, updating the epoch accordingly.
 
 If the form C<< $t->quarter($new_quarter) >> is used, it likewise sets the current quarter but returns the entire object.
 
+The quarter is 1-based where quarter 1 is the first three months of the year. Legal values are in the range 1-4.
+
 =cut
 
 method quarter ($t: $new_quarter = undef) :lvalue {
@@ -552,6 +560,8 @@ method quarter ($t: $new_quarter = undef) :lvalue {
 Returns or sets the current month of the year, updating the epoch accordingly.
 
 If the form C<< $t->month($new_month) >> is used, it likewise sets the month but returns the entire object.
+
+The month is 1-based where month 1 is January. Legal values are in the range 1-12.
 
 =cut 
 
@@ -615,6 +625,8 @@ Returns or sets the current day of the month, updating the epoch accordingly.
 
 If the form C<< $t->day($new_day) >> is used, it likewise sets the current day of the month but returns the entire object.
 
+The day is 1-based where day 1 is the first day of the month. Legal values are in the range 1-31.
+
 =cut
 
 method day ($t: $new_day = undef) :lvalue { $t->day_of_month(@_) }
@@ -654,6 +666,8 @@ Returns or sets the current day of the year, updating the epoch accordingly.
 
 If the form C<< $t->day_of_year($new_day) >> is used, it likewise sets the current day of the year but returns the entire object.
 
+The day is 1-based where day 1 is the first day of the year. Legal values are in the range 1-366.
+
 =cut
 
 method day_of_year ($t: $new_day = undef) :lvalue {
@@ -684,6 +698,8 @@ method day_of_year ($t: $new_day = undef) :lvalue {
 Returns or sets the current day of the quarter, updating the epoch accordingly.
 
 If the form C<< $t->day_of_quarter($new_day) >> is used, it likewise sets the current day of the quarter but returns the entire object.
+
+The day is 1-based where day 1 is the first day in the first month of the quarter. Legal values are in the range 1-92.
 
 =cut
 
@@ -716,6 +732,8 @@ Returns or sets the current day of the week, updating the epoch accordingly. Thi
 
 If the form C<< $t->day_of_week($new_day) >> is used, it likewise sets the current day of the week but returns the entire object.
 
+The day is 1-based where day 1 is Monday. Legal values are in the range 1-7.
+
 =cut
 
 method day_of_week ($t: $new_day = undef) :lvalue {
@@ -746,6 +764,8 @@ method day_of_week ($t: $new_day = undef) :lvalue {
 Returns or sets the current hour of the day, updating the epoch accordingly.
 
 If the form C<< $t->hour($new_hour) >> is used, it likewise sets the current hour but returns the entire object.
+
+The hour is 0-based where hour 0 is midnight. Legal values are in the range 0-23.
 
 =cut
 
@@ -778,6 +798,8 @@ Returns or sets the current minute of the hour, updating the epoch accordingly.
 
 If the form C<< $t->minute($new_minute) >> is used, it likewise sets the current minute but returns the entire object.
 
+The minute is 0-based where minute 0 is the first minute of the hour. Legal values are in the range 0-59.
+
 =cut
 
 method minute ($t: $new_minute = undef) :lvalue {
@@ -809,6 +831,8 @@ Returns or sets the current second of the minute, updating the epoch accordingly
 
 If the form C<< $t->second($new_second) >> is used, it likewise sets the current second but returns the entire object.
 
+The second is 0-based where second 0 is the first second of the minute. Legal values are in the range 0-59.
+
 =cut
 
 method second ($t: $new_second = undef) :lvalue {
@@ -839,6 +863,8 @@ method second ($t: $new_second = undef) :lvalue {
 Returns or sets the current millisecond of the second, updating the epoch accordingly.
 
 If the form C<< $t->millisecond($new_msec) >> is used, it likewise updates the current millisecond but returns the entire object.
+
+The millisecond is 0-based where millisecond 0 means exact to the second. Legal values are in the range 0-999.
 
 =cut
 
@@ -872,6 +898,8 @@ Returns or sets the current microsecond of the second, updating the epoch accord
 
 If the form C<< $t->microsecond($new_µsec) >> is used, it likewise updates the current microsecond but returns the entire object.
 
+The microsecond is 0-based where microsecond 0 means exact to the second. Legal values are in the range 0-999'999.
+
 =cut
 
 method microsecond ($t: $new_msec) :lvalue {
@@ -902,6 +930,8 @@ method microsecond ($t: $new_msec) :lvalue {
 Returns or sets the current nanosecond of the second, updating the epoch accordingly.
 
 If the form C<< $t->nanosecond($new_nsec) >> is used, it likewise updates the current nanosecond but returns the entire object.
+
+The nanosecond is 0-based where nanosecond 0 means exact to the second. Legal values are in the range 0-999'999'999.
 
 =cut
 
