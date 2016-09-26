@@ -308,15 +308,26 @@ These accessors will work as C<LVALUE>s, meaning you can assign to them to chang
   $t->epoch++;
   $t->epoch--;
 
+  $t = $t->epoch($new_epoch);
+
 Returns or sets the epoch according to the specified timezone.
+
+If the form C<< $t->epoch($new_epoch) >> is used, it likewise changes the epoch but returns the entire object.
 
 =cut
 
-method epoch ($t:) :lvalue {
+method epoch ($t: $new_epoch = undef) :lvalue {
     my $epoch = _from_utc($t->{epoch}, $t->{tz});
 
-    sentinel value => $epoch, set =>
-      sub { $t->{epoch} = _to_utc($_[0], $t->{tz}); $_[0]; };
+    my $setter = sub {
+        $t->{epoch} = _to_utc($_[0], $t->{tz});
+        return $t if defined $new_epoch;
+        return $_[0];
+    };
+
+    return $setter->($new_epoch) if defined $new_epoch;
+
+    sentinel value => $epoch, set => $setter;
 }
 
 =head2 tz
@@ -328,7 +339,7 @@ method epoch ($t:) :lvalue {
 
 Returns or sets the timezone. If the timezone can't be recognised it dies.
 
-If the form C<< $t->tz($new_tz) >> is used, it instead changes the internal tz and returns the entire object.
+If the form C<< $t->tz($new_tz) >> is used, it likewise changes the timezone but returns the entire object.
 
 =cut
 
@@ -358,11 +369,15 @@ method tz ($t: $new_tz = undef) :lvalue {
   $t->offset = $offset;
   $t->offset += 60;
 
+  $t = $t->offset($new_offset);
+
 Returns or sets the current offset in minutes. If the offset is set, it tries to find a generic C<Etc/GMT+X> or C<+XX:XX> timezone that matches the offset and updates the C<tz> to this. If it fails, it dies with an error.
+
+If the form C<< $t->offset($new_offset) >> is used, it likewise sets the timezone from C<$new_offset> but returns the entire object.
 
 =cut
 
-method offset ($t:) :lvalue {
+method offset ($t: $new_offset = undef) :lvalue {
     my $offset = eval { Time::Zone::Olson->new({timezone => $t->{tz}})
       ->local_offset($t->{epoch}); };
 
@@ -374,11 +389,19 @@ method offset ($t:) :lvalue {
         }
     }
 
+    my $setter = sub {
+        $t->{tz} = _get_tz($_[0]);
+
+        return $t if defined $new_offset;
+        return $_[0];
+    };
+
+    return $setter->($new_offset) if defined $new_offset;
+
     croak sprintf "Invalid timezone %s set. Can't find offset.", $t->{tz}
       if not defined $offset;
 
-    sentinel value => $offset, set =>
-      sub { $t->{tz} = _get_tz($_[0]); $_[0]; };
+    sentinel value => $offset, set => $setter;
 }
 
 =head2 tm
@@ -386,12 +409,25 @@ method offset ($t:) :lvalue {
   my $tm = $t->tm;
   $t->tm = $tm;
 
+  $t = $t->tm($new_tm);
+
 Returns a Time::Moment object for the current epoch and offset. On setting, it changes the current epoch.
+
+If the form C<< $t->tm($new_tm) >> is used, it likewise changes the current epoch but returns the entire object.
 
 =cut
 
-method tm ($t:) :lvalue {
+method tm ($t: $new_tm = undef) :lvalue {
     $t->{tz} = 'UTC' if not defined $t->{tz};
+
+    my $setter = sub {
+        $t->{epoch} = $_[0]->with_offset_same_instant(0)->epoch;
+
+        return $t if defined $new_tm;
+        return $_[0];
+    };
+
+    return $setter->($new_tm) if defined $new_tm;
 
     my $tm = Time::Moment->from_epoch($t->{epoch});
 
@@ -399,8 +435,7 @@ method tm ($t:) :lvalue {
         $tm = $tm->with_offset_same_instant($t->offset);
     }
 
-    sentinel value => $tm, set =>
-      sub { $t->{epoch} = $_[0]->with_offset_same_instant(0)->epoch; $_[0]; };
+    sentinel value => $tm, set => $setter;
 }
 
 =head2 string
@@ -410,12 +445,25 @@ method tm ($t:) :lvalue {
   $t->string = $str;
   $t->string($format) = $str;
 
+  $t = $t->string($format, $new_str);
+
 Renders the current time to a string using the optional strftime C<$format>. If the C<$format> is not given it defaults to C<undef>. When setting this value, it tries to parse the string using L<Time::Piece/strptime> with the C<$format> or L<Time::Moment/from_string> if no C<$format> was given or strptime fails. If the detected C<offset> matches the current C<tz>, that is kept, otherwise it will get changed to a generic C<tz> in the form of C<Etc/GMT+X> or C<+XX:XX>.
+
+If the form C<< $t->string($format, $new_str) >> is used, it likewise updates the epoch and timezone but returns the entire object.
 
 =cut
 
-method string ($t: $format = undef) :lvalue {
+method string ($t: $format = undef, $new_str = undef) :lvalue {
     $t->{tz} = 'UTC' if not defined $t->{tz};
+
+    my $setter = sub {
+        @{$t}{epoch,tz} = _parse($_[0], $format, $t->{tz});
+
+        return $t if defined $new_str;
+        return $_[0];
+    }
+
+    return $setter->($new_str) if defined $new_str;
 
     my $str;
     if (defined $format) {
@@ -426,8 +474,7 @@ method string ($t: $format = undef) :lvalue {
         $str = Time::Moment->from_epoch($t->{epoch})->with_offset_same_instant($t->offset)->to_string;
     }
 
-    sentinel value => $str, set =>
-      sub { @{$t}{epoch,tz} = _parse($_[0], $format, $t->{tz}); $_[0]; }
+    sentinel value => $str, set => $setter;
 }
 
 =head2 year
@@ -438,17 +485,27 @@ method string ($t: $format = undef) :lvalue {
   $t->year++;
   $t->year--;
 
+  $t = $t->year($new_year);
+
 Returns or sets the current year, updating the epoch accordingly.
+
+If the form C<< $t->year($new_year) >> is used, it likewise sets the current year but returns the entire object.
 
 =cut
 
-method year ($t:) :lvalue {
+method year ($t: $new_year = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->year, set =>
-      sub {
-          my $ret = ($t->tm = $tm->with_year($_[0]))->year;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->with_year($_[0]))->year;
+
+        return $t if defined $new_year;
+        return $ret;
+    };
+
+    return $setter->($new_year) if defined $new_year;
+
+    sentinel value => $tm->year, set => $setter;
 }
 
 =head2 quarter
@@ -459,17 +516,27 @@ method year ($t:) :lvalue {
   $t->quarter++;
   $t->quarter--;
 
+  $t = $t->quarter($new_quarter);
+
 Returns or sets the current quarter of the year, updating the epoch accordingly.
+
+If the form C<< $t->quarter($new_quarter) >> is used, it likewise sets the current quarter but returns the entire object.
 
 =cut
 
-method quarter ($t:) :lvalue {
+method quarter ($t: $new_quarter = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->quarter, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_months(3*$_[0] - $tm->month))->quarter;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_months(3*$_[0] - $tm->month))->quarter;
+
+        return $t if defined $new_quarter;
+        return $ret;
+    };
+
+    return $setter->($new_quarter) if defined $new_quarter;
+
+    sentinel value => $tm->quarter, set => $setter;
 }
 
 =head2 month
@@ -480,17 +547,27 @@ method quarter ($t:) :lvalue {
   $t->month++;
   $t->month--;
 
+  $t = $t->month($new_month);
+
 Returns or sets the current month of the year, updating the epoch accordingly.
+
+If the form C<< $t->month($new_month) >> is used, it likewise sets the month but returns the entire object.
 
 =cut 
 
-method month ($t:) :lvalue {
+method month ($t: $new_month = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->month, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_months($_[0] - $tm->month))->month;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_months($_[0] - $tm->month))->month;
+
+        return $t if defined $new_month;
+        return $ret;
+    };
+
+    return $setter->($new_month) if defined $new_month;
+
+    sentinel value => $tm->month, set => $setter;
 }
 
 =head2 week
@@ -501,17 +578,27 @@ method month ($t:) :lvalue {
   $t->week++;
   $t->week--;
 
+  $t = $t->week($new_week);
+
 Returns or sets the current week or the year, updating the epoch accordingly.
+
+If the form C<< $t->week($new_week) >> is used, it likewise sets the current week but returns the entire object.
 
 =cut
 
-method week ($t:) :lvalue {
+method week ($t: $new_week = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->week, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_weeks($_[0] - $tm->week))->week;
-      };
+    sub {
+        my $ret = ($t->tm = $tm->plus_weeks($_[0] - $tm->week))->week;
+
+        return $t if defined $new_week;
+        return $ret;
+    };
+
+    return $setter->($new_week) if defined $new_week;
+
+    sentinel value => $tm->week, set => $setter;
 }
 
 =head2 day
@@ -522,11 +609,15 @@ method week ($t:) :lvalue {
   $t->day++;
   $t->day--;
 
+  $t = $t->day($new_day);
+
 Returns or sets the current day of the month, updating the epoch accordingly.
+
+If the form C<< $t->day($new_day) >> is used, it likewise sets the current day of the month but returns the entire object.
 
 =cut
 
-method day ($t:) :lvalue { $t->day_of_month }
+method day ($t: $new_day = undef) :lvalue { $t->day_of_month(@_) }
 
 =head2 day_of_month
 
@@ -534,13 +625,19 @@ Functions exactly like C<day>.
 
 =cut
 
-method day_of_month ($t:) :lvalue {
+method day_of_month ($t: $new_day = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->day_of_month, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_month))->day_of_month;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_month))->day_of_month;
+
+        return $t if defined $new_day;
+        return $ret;
+    };
+
+    return $setter->($new_day) if defined $new_day;
+
+    sentinel value => $tm->day_of_month, set => $setter;
 }
 
 =head2 day_of_year
@@ -551,17 +648,27 @@ method day_of_month ($t:) :lvalue {
   $t->day_of_year++;
   $t->day_of_year--;
 
-Returns or sets the current day of the month, updating the epoch accordingly.
+  $t = $t->day_of_year($new_day);
+
+Returns or sets the current day of the year, updating the epoch accordingly.
+
+If the form C<< $t->day_of_year($new_day) >> is used, it likewise sets the current day of the year but returns the entire object.
 
 =cut
 
-method day_of_year ($t:) :lvalue {
+method day_of_year ($t: $new_day = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->day_of_year, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_year))->day_of_year;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_year))->day_of_year;
+
+        return $t if defined $new_day;
+        return $ret;
+    };
+
+    return $setter->($new_day) if defined $new_day;
+
+    sentinel value => $tm->day_of_year, set => $setter;
 }
 
 =head2 day_of_quarter
@@ -572,17 +679,27 @@ method day_of_year ($t:) :lvalue {
   $t->day_of_quarter++;
   $t->day_of_quarter--;
 
+  $t = $t->day_of_quarter($new_day);
+
 Returns or sets the current day of the quarter, updating the epoch accordingly.
+
+If the form C<< $t->day_of_quarter($new_day) >> is used, it likewise sets the current day of the quarter but returns the entire object.
 
 =cut
 
-method day_of_quarter ($t:) :lvalue {
+method day_of_quarter ($t: $new_day = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->day_of_quarter, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_quarter))->day_of_quarter;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_quarter))->day_of_quarter;
+
+        return $t if defined $new_day;
+        return $ret;
+    };
+
+    return $setter->($new_day) if defined $new_day;
+
+    sentinel value => $tm->day_of_quarter, set => $setter;
 }
 
 =head2 day_of_week
@@ -593,17 +710,27 @@ method day_of_quarter ($t:) :lvalue {
   $t->day_of_week++;
   $t->day_of_week--;
 
+  $t = $t->day_of_week($new_day);
+
 Returns or sets the current day of the week, updating the epoch accordingly. This module uses L<Time::Moment> which counts days in the week starting from 1 with Monday, and ending on 7 with Sunday.
+
+If the form C<< $t->day_of_week($new_day) >> is used, it likewise sets the current day of the week but returns the entire object.
 
 =cut
 
-method day_of_week ($t:) :lvalue {
+method day_of_week ($t: $new_day = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->day_of_week, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_week))->day_of_week;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_week))->day_of_week;
+
+        return $t if defined $new_day;
+        return $ret;
+    };
+
+    return $setter->($new_day) if defined $new_day;
+
+    sentinel value => $tm->day_of_week, set => $setter;
 }
 
 =head2 hour
@@ -614,17 +741,27 @@ method day_of_week ($t:) :lvalue {
   $t->hour++;
   $t->hour--;
 
+  $t = $t->hour($new_hour);
+
 Returns or sets the current hour of the day, updating the epoch accordingly.
+
+If the form C<< $t->hour($new_hour) >> is used, it likewise sets the current hour but returns the entire object.
 
 =cut
 
-method hour ($t:) :lvalue {
+method hour ($t: $new_hour = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->hour, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_hours($_[0] - $tm->hour))->hour;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_hours($_[0] - $tm->hour))->hour;
+
+        return $t if defined $new_hour;
+        return $ret;
+    };
+
+    return $setter->($new_hour) if defined $new_hour;
+
+    sentinel value => $tm->hour, set => $setter;
 }
 
 =head2 minute
@@ -635,17 +772,27 @@ method hour ($t:) :lvalue {
   $t->minute++;
   $t->minute--;
 
+  $t = $t->minute($new_minute);
+
 Returns or sets the current minute of the hour, updating the epoch accordingly.
+
+If the form C<< $t->minute($new_minute) >> is used, it likewise sets the current minute but returns the entire object.
 
 =cut
 
-method minute ($t:) :lvalue {
+method minute ($t: $new_minute = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->minute, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_minutes($_[0] - $tm->minute))->minute;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_minutes($_[0] - $tm->minute))->minute;
+
+        return $t if defined $new_minute;
+        return $ret;
+    };
+
+    return $setter->($new_minute) if defined $new_minute;
+
+    sentinel value => $tm->minute, set => $setter;
 }
 
 =head2 second
@@ -656,17 +803,27 @@ method minute ($t:) :lvalue {
   $t->second++;
   $t->second--;
 
+  $t = $t->second($new_second);
+
 Returns or sets the current second of the minute, updating the epoch accordingly.
+
+If the form C<< $t->second($new_second) >> is used, it likewise sets the current second but returns the entire object.
 
 =cut
 
-method second ($t:) :lvalue {
+method second ($t: $new_second = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->second, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_seconds($_[0] - $tm->second))->second;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_seconds($_[0] - $tm->second))->second;
+
+        return $t if defined $new_second;
+        return $ret;
+    };
+
+    return $setter->($new_second) if defined $new_second;
+
+    sentinel value => $tm->second, set => $setter;
 }
 
 =head2 millisecond
@@ -677,17 +834,27 @@ method second ($t:) :lvalue {
   $t->millisecond++;
   $t->millisecond--;
 
+  $t = $t->millisecond($new_msec);
+
 Returns or sets the current millisecond of the second, updating the epoch accordingly.
+
+If the form C<< $t->millisecond($new_msec) >> is used, it likewise updates the current millisecond but returns the entire object.
 
 =cut
 
-method millisecond ($t:) :lvalue {
+method millisecond ($t: $new_msec = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->millisecond, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_milliseconds($_[0] - $tm->millisecond))->millisecond;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_milliseconds($_[0] - $tm->millisecond))->millisecond;
+
+        return $t if defined $new_msec;
+        return $ret;
+    };
+
+    return $setter->($new_msec) if defined $new_msec;
+
+    sentinel value => $tm->millisecond, set => $setter;
 }
 
 =head2 microsecond
@@ -699,17 +866,27 @@ method millisecond ($t:) :lvalue {
   $t->microsecond++;
   $t->microsecond--;
 
+  $t = $t->microsecond($new_µsec);
+
 Returns or sets the current microsecond of the second, updating the epoch accordingly.
+
+If the form C<< $t->microsecond($new_µsec) >> is used, it likewise updates the current microsecond but returns the entire object.
 
 =cut
 
-method microsecond ($t:) :lvalue {
+method microsecond ($t: $new_msec) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->microsecond, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_microseconds($_[0] - $tm->microsecond))->microsecond;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_microseconds($_[0] - $tm->microsecond))->microsecond;
+
+        return $t if defined $new_msec;
+        return $ret;
+    };
+
+    return $setter->($new_msec) if defined $new_msec;
+
+    sentinel value => $tm->microsecond, set => $setter;
 }
 
 =head2 nanosecond
@@ -720,17 +897,27 @@ method microsecond ($t:) :lvalue {
   $t->nanosecond++;
   $t->nanosecond--;
 
+  $t = $t->nanosecond($new_nsec);
+
 Returns or sets the current nanosecond of the second, updating the epoch accordingly.
+
+If the form C<< $t->nanosecond($new_nsec) >> is used, it likewise updates the current nanosecond but returns the entire object.
 
 =cut
 
-method nanosecond ($t:) :lvalue {
+method nanosecond ($t: $new_nsec = undef) :lvalue {
     my $tm = $t->tm();
 
-    sentinel value => $tm->nanosecond, set =>
-      sub {
-          my $ret = ($t->tm = $tm->plus_nanoseconds($_[0] - $tm->nanosecond))->nanosecond;
-      };
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_nanoseconds($_[0] - $tm->nanosecond))->nanosecond;
+
+        return $t if defined $new_nsec;
+        return $ret;
+    };
+
+    return $setter->($new_nsec) if defined $new_nsec;
+
+    sentinel value => $tm->nanosecond, set => $setter;
 }
 
 1;
