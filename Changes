@@ -1,4 +1,8 @@
 {{$NEXT}}
+  - Added strict and warnings to Time::C::Sentinel.
+  - Fix bug in ->now() which would give wrong time unless your TZ was UTC.
+  - Allow accessors to be chained.
+  - Let ->now() specify an optional TZ.
 
 0.004     2016-09-25 20:01:03+02:00 Europe/Stockholm
   - :lvalue subroutines didn't work properly in perl 5.14, so depend on 5.16
