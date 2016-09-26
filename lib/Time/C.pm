@@ -466,7 +466,7 @@ method string ($t: $format = undef, $new_str = undef) :lvalue {
 
         return $t if defined $new_str;
         return $_[0];
-    }
+    };
 
     return $setter->($new_str) if defined $new_str;
 
@@ -595,12 +595,14 @@ Returns or sets the current week or the year, updating the epoch accordingly.
 
 If the form C<< $t->week($new_week) >> is used, it likewise sets the current week but returns the entire object.
 
+The week is 1-based where week 1 is the first week of the year according to ISO 8601. The first week may actually have some days in the previous year, and the last week may have some days in the subsequent year. Legal values are in the range 1-53.
+
 =cut
 
 method week ($t: $new_week = undef) :lvalue {
     my $tm = $t->tm();
 
-    sub {
+    my $setter = sub {
         my $ret = ($t->tm = $tm->plus_weeks($_[0] - $tm->week))->week;
 
         return $t if defined $new_week;
