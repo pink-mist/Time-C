@@ -149,12 +149,13 @@ method gmtime ($c: $epoch) { $c->localtime( $epoch, 'UTC' ); }
 =head2 now
 
   my $t = Time::C->now();
+  my $t = Time::C->now($tz);
 
-Creates a Time::C object for the current epoch in the timezone specified in C<$ENV{TZ}> or C<UTC> if that is unspecified.
+Creates a Time::C object for the current epoch in the timezone specified in C<$tz> or C<$ENV{TZ}> or C<UTC> if the first two are unspecified.
 
 =cut
 
-method now ($c:) { $c->localtime( time ); }
+method now ($c: $tz = $ENV{TZ}) { $c->gmtime( time )->tz( $tz // 'UTC' ); }
 
 =head2 now_utc
 
