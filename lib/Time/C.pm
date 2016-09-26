@@ -905,7 +905,7 @@ The microsecond is 0-based where microsecond 0 means exact to the second. Legal 
 
 =cut
 
-method microsecond ($t: $new_msec) :lvalue {
+method microsecond ($t: $new_msec = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
