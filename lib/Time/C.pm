@@ -361,6 +361,15 @@ If the form C<< $t->offset($new_offset) >> is used, it likewise sets the timezon
 =cut
 
 method offset ($t: $new_offset = undef) :lvalue {
+    my $setter = sub {
+        $t->{tz} = _get_tz($_[0]);
+
+        return $t if defined $new_offset;
+        return $_[0];
+    };
+
+    return $setter->($new_offset) if defined $new_offset;
+
     my $offset = eval { Time::Zone::Olson->new({timezone => $t->{tz}})
       ->local_offset($t->{epoch}); };
 
@@ -372,16 +381,7 @@ method offset ($t: $new_offset = undef) :lvalue {
         }
     }
 
-    my $setter = sub {
-        $t->{tz} = _get_tz($_[0]);
-
-        return $t if defined $new_offset;
-        return $_[0];
-    };
-
-    return $setter->($new_offset) if defined $new_offset;
-
-    croak sprintf "Invalid timezone %s set. Can't find offset.", $t->{tz}
+    croak sprintf "Unknown timezone %s.", $t->{tz}
       if not defined $offset;
 
     sentinel value => $offset, set => $setter;
