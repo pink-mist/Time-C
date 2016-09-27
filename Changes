@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.006     2016-09-27 13:24:15+02:00 Europe/Stockholm
   - Remove ->from_epoch() constructor, as it's the same as ->gmtime().
   - Rewrite buggy ->localtime() constructor.
   - Rewrite buggy ->epoch() accessor.
