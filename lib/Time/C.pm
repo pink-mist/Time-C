@@ -124,7 +124,7 @@ This is the timezone specification, such as C<Europe/Stockholm> or C<UTC>. If no
 
 method localtime ($c: $epoch, $tz = $ENV{TZ}) {
     $tz = 'UTC' unless defined $tz;
-    $epoch = _to_utc($epoch, $tz);
+    _verify_tz($tz);
     bless {epoch => $epoch, tz => $tz}, $c;
 }
 
@@ -207,22 +207,16 @@ method from_string ($c: $str, $format = undef, $expected_tz = 'UTC') {
     bless {epoch => $p[0], tz => $p[1]}, $c;
 }
 
-fun _to_utc ($epoch, $from) {
-    return $epoch if (not defined $from or $from eq 'UTC' or $from eq 'GMT');
-
-    my $offset = eval {
-      Time::Zone::Olson->new({timezone => $from})->local_offset($epoch); };
-
-    croak sprintf "Unknown timezone %s.", $from if not defined $offset;
-
-    return $epoch + $offset * 60;
+fun constrain ($val, $min, $max) {
+    return not ($val > $max or $val < $min);
 }
 
-fun _from_utc ($epoch, $to) {
-    return $epoch if (not defined $to or $to eq 'UTC' or $to eq 'GMT');
-
-    my $offset = Time::Zone::Olson->new({timezone => $to})->local_offset($epoch);
-    return $epoch - $offset * 60;
+fun _verify_tz ($tz) {
+    unless ($tz =~ /^([+-]?\d+):(\d+)$/ and
+      (constrain($1, -12, 14) and constrain($2, 0, 60)) {
+        croak sprintf "Unknown timezone: %s", $tz
+          unless eval { Time::Zone::Olson->new({timezone => $tz}); 1; };
+    }
 }
 
 my %tz_offset = (
@@ -312,10 +306,10 @@ If the form C<< $t->epoch($new_epoch) >> is used, it likewise changes the epoch 
 =cut
 
 method epoch ($t: $new_epoch = undef) :lvalue {
-    my $epoch = _from_utc($t->{epoch}, $t->{tz});
+    my $epoch = $t->{epoch};
 
     my $setter = sub {
-        $t->{epoch} = _to_utc($_[0], $t->{tz});
+        $t->{epoch} = $_[0];
         return $t if defined $new_epoch;
         return $_[0];
     };
@@ -340,13 +334,7 @@ If the form C<< $t->tz($new_tz) >> is used, it likewise changes the timezone but
 
 method tz ($t: $new_tz = undef) :lvalue {
     my $setter = sub {
-        unless (
-          $_[0] =~ /^([+-])(\d+):(\d+)$/ and 
-          (($1 eq '+' and $2 < 14 and $3 < 60) or
-          ($1 eq '-' and $2 < 12 and $3 < 60))) {
-            croak sprintf "Unknown timezone: %s", $_[0]
-              unless eval { Time::Zone::Olson->new({timezone => $_[0]}); 1; };
-        }
+        _verify_tz($_[0]);
 
         $t->{tz} = $_[0];
         return $t if defined $new_tz;
