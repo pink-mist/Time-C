@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 68;
+use Test::More tests => 66;
 
 use Time::Moment;
 use Time::C;
@@ -21,10 +21,6 @@ like($t_now_utc->string, qr/^\d+-\d+-\d+T\d+:\d+:\d+Z$/, 'now_utc constructor pr
 my $t_string = Time::C->from_string("2016-09-23T04:55:13Z");
 isa_ok($t_string, 'Time::C');
 is($t_string->string, "2016-09-23T04:55:13Z", 'from_string constructor correct');
-
-my $t_epoch = Time::C->from_epoch($t_string->epoch());
-isa_ok($t_epoch, 'Time::C');
-is($t_epoch->string, $t_string->string, 'from_epoch constructor correct');
 
 my $t = $t_string;
 
