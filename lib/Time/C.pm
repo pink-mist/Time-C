@@ -163,7 +163,7 @@ This is the timezone specification, such as C<Europe/Stockholm> or C<UTC>. If no
 
 =cut
 
-method now ($c: $tz = $ENV{TZ}) { $c->gmtime( time )->tz( $tz // 'UTC' ); }
+method now ($c: $tz = $ENV{TZ}) { $c->localtime( $time, $tz ); }
 
 =head2 now_utc
 
