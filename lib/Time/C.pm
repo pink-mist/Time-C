@@ -163,7 +163,7 @@ This is the timezone specification, such as C<Europe/Stockholm> or C<UTC>. If no
 
 =cut
 
-method now ($c: $tz = $ENV{TZ}) { $c->localtime( $time, $tz ); }
+method now ($c: $tz = $ENV{TZ}) { $c->localtime( time, $tz ); }
 
 =head2 now_utc
 
@@ -213,7 +213,7 @@ fun constrain ($val, $min, $max) {
 
 fun _verify_tz ($tz) {
     unless ($tz =~ /^([+-]?\d+):(\d+)$/ and
-      (constrain($1, -12, 14) and constrain($2, 0, 60)) {
+      constrain($1, -12, 14) and constrain($2, 0, 60)) {
         croak sprintf "Unknown timezone: %s", $tz
           unless eval { Time::Zone::Olson->new({timezone => $tz}); 1; };
     }
