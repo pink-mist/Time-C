@@ -1,4 +1,8 @@
 {{$NEXT}}
+  - Remove ->from_epoch() constructor, as it's the same as ->gmtime().
+  - Rewrite buggy ->localtime() constructor.
+  - Rewrite buggy ->epoch() accessor.
+  - Improve documentation for ->now() constructor slightly.
 
 0.005     2016-09-26 13:49:03+02:00 Europe/Stockholm
   - Added strict and warnings to Time::C::Sentinel.
@@ -7,7 +11,7 @@
   - Let ->now() specify an optional TZ.
 
 0.004     2016-09-25 20:01:03+02:00 Europe/Stockholm
-  - :lvalue subroutines didn't work properly in perl 5.14, so depend on 5.16
+  - :lvalue subroutines didn't work properly in perl 5.14, so depend on 5.16.
   - A few minor documentation fixups.
 
 0.003     2016-09-24 23:37:16+02:00 Europe/Stockholm
