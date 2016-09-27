@@ -175,24 +175,6 @@ Creates a Time::C object for the current epoch in C<UTC>.
 
 method now_utc ($c:) { $c->localtime( time, 'UTC' ); }
 
-=head2 from_epoch
-
-  my $t = Time::C->from_epoch($epoch);
-
-Creates a Time::C object for the specified C<$epoch>. The timezone will be C<UTC>.
-
-=over
-
-=item C<$epoch>
-
-This is the time in seconds since the system epoch, usually C<1970-01-01T00:00:00Z>.
-
-=back
-
-=cut
-
-method from_epoch ($c: $epoch) { $c->localtime( $epoch, 'UTC' ); }
-
 =head2 from_string
 
   my $t = Time::C->from_string($str);
