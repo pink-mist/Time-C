@@ -299,7 +299,7 @@ Note that an assignment expression will return the I<computed> value rather than
 
   $t = $t->epoch($new_epoch);
 
-Returns or sets the epoch according to the specified timezone.
+Returns or sets the epoch, i.e. the number of seconds since C<1970-01-01T00:00:00Z>.
 
 If the form C<< $t->epoch($new_epoch) >> is used, it likewise changes the epoch but returns the entire object.
 
