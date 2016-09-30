@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 66;
+use Test::More tests => 63;
 
 use Time::Moment;
 use Time::C;
@@ -129,10 +129,6 @@ is($t->string, "1981-02-05T01:00:13Z", 'incrementing minute by 5 correct');
 is($t->second, '13', 'initial second correct');
 $t->second -= 3613;
 is($t->string, "1981-02-05T00:00:00Z", 'decrementing second by 3613 correct');
-
-is($t->millisecond, '0', 'initial millisecond correct');
-is($t->microsecond, '0', 'initial microsecond correct');
-is($t->nanosecond, '0', 'initial nanosecond correct');
 
 is($t->offset, '0', 'initial offset correct');
 $t->offset = 120;
