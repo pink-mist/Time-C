@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.007     2016-09-30 18:47:31+02:00 Europe/Stockholm
   - Add Time::D for dealing with differences between two epochs.
   - Add bool overload to Time::C as suggested by Perl::Critic::Freenode.
   - Fix ->new() constructor when given a timezone outside of UTC/GMT.
