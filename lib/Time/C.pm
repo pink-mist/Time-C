@@ -99,6 +99,13 @@ method new ($c: $year = undef, $month = 1, $day = 1, $hour = 0, $minute = 0, $se
 
     my $tm = Time::Moment->new(year => $year, month => $month, day => $day, hour => $hour, minute => $minute, second => $second, offset => 0);
 
+    if ($tz ne 'UTC' and $tz ne 'GMT') {
+        my $offset = _get_offset($tm->epoch, $tz);
+        $tm = $tm->with_offset_same_local($offset);
+        $offset = _get_offset($tm->epoch, $tz);
+        $tm = $tm->with_offset_same_local($offset);
+    }
+
     $c->localtime($tm->epoch, $tz);
 }
 
@@ -208,16 +215,8 @@ method from_string ($c: $str, $format = undef, $expected_tz = 'UTC') {
     bless {epoch => $p[0], tz => $p[1]}, $c;
 }
 
-fun _constrain ($val, $min, $max) {
-    return not ($val > $max or $val < $min);
-}
-
 fun _verify_tz ($tz) {
-    unless ($tz =~ /^([+-]?\d+):(\d+)$/ and
-      _constrain($1, -12, 14) and _constrain($2, 0, 60)) {
-        croak sprintf "Unknown timezone: %s", $tz
-          unless eval { Time::Zone::Olson->new({timezone => $tz}); 1; };
-    }
+    _get_offset(time, $tz);
 }
 
 my %tz_offset = (
@@ -347,6 +346,24 @@ method tz ($t: $new_tz = undef) :lvalue {
     sentinel value => $t->{tz}, set => $setter;
 }
 
+fun _get_offset ($epoch, $tz) {
+    my $offset = eval { Time::Zone::Olson->new({timezone => $tz})
+      ->local_offset($epoch); };
+
+    if (not defined $offset) {
+        if ($tz =~ /^([+-])(\d+):(\d+)$/) {
+            my ($sign, $hour, $min) = ($1, $2, $3);
+            $offset = 60 * $hour + $min;
+            $offset = -$offset if $sign eq '-';
+        }
+    }
+
+    croak sprintf "Unknown timezone %s.", $tz
+      if not defined $offset;
+
+    return $offset;
+}
+
 =head2 offset
 
   my $offset = $t->offset;
@@ -371,19 +388,7 @@ method offset ($t: $new_offset = undef) :lvalue {
 
     return $setter->($new_offset) if defined $new_offset;
 
-    my $offset = eval { Time::Zone::Olson->new({timezone => $t->{tz}})
-      ->local_offset($t->{epoch}); };
-
-    if (not defined $offset) {
-        if ($t->{tz} =~ /^([+-])(\d+):(\d+)$/) {
-            my ($sign, $hour, $min) = ($1, $2, $3);
-            $offset = 60 * $hour + $min;
-            $offset = -$offset if $sign eq '-';
-        }
-    }
-
-    croak sprintf "Unknown timezone %s.", $t->{tz}
-      if not defined $offset;
+    my $offset = _get_offset($t->{epoch}, $t->{tz});
 
     sentinel value => $offset, set => $setter;
 }
