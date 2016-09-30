@@ -1,4 +1,7 @@
 {{$NEXT}}
+  - Add Time::D for dealing with differences between two epochs.
+  - Add bool overload to Time::C as suggested by Perl::Critic::Freenode.
+  - Minor internal improvements.
 
 0.006     2016-09-27 13:24:15+02:00 Europe/Stockholm
   - Remove ->from_epoch() constructor, as it's the same as ->gmtime().
