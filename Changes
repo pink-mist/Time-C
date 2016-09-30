@@ -1,4 +1,10 @@
 {{$NEXT}}
+  - Forgot to add the changes when I released 0.008, so they're now added.
+
+0.008     2016-10-01 00:32:46+02:00 Europe/Stockholm
+  - Improve documentation in Time::D.
+  - Remove ->millisecond, ->microsecond, ->nanosecond from Time::C.
+  - Add ->diff method to Time::C to get a Time::D conveniently.
 
 0.007     2016-09-30 18:47:31+02:00 Europe/Stockholm
   - Add Time::D for dealing with differences between two epochs.
