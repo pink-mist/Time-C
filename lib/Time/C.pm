@@ -13,6 +13,7 @@ use overload (
 use Carp qw/ croak /;
 use Function::Parameters qw/ :strict /;
 use Time::C::Sentinel;
+use Time::D;
 use Time::Moment;
 use Time::Piece ();
 use Time::Zone::Olson;
@@ -835,6 +836,29 @@ method second ($t: $new_second = undef) :lvalue {
     return $setter->($new_second) if defined $new_second;
 
     sentinel value => $tm->second, set => $setter;
+}
+
+=head1 METHODS
+
+=cut
+
+=head2 diff
+
+  my $d = $t1->diff($t2);
+  my $d = $t1->diff($epoch);
+
+Creates a L<Time::D> object from C<$t1> and C<$t2> or C<$epoch>. It accepts either an arbitrary object that has an C<< ->epoch >> accessor returning an epoch, or a straight epoch.
+
+=cut
+
+method diff ($t: $t2) {
+    my $epoch =
+      ref $t2 ?
+        $t2->can('epoch') ?
+          $t2->epoch :
+          croak "Object with no ->epoch method passed (". ref $t2 .")." :
+        $t2;
+    return Time::D->new($t->epoch, $epoch);
 }
 
 1;
