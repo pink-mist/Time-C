@@ -208,13 +208,13 @@ method from_string ($c: $str, $format = undef, $expected_tz = 'UTC') {
     bless {epoch => $p[0], tz => $p[1]}, $c;
 }
 
-fun constrain ($val, $min, $max) {
+fun _constrain ($val, $min, $max) {
     return not ($val > $max or $val < $min);
 }
 
 fun _verify_tz ($tz) {
     unless ($tz =~ /^([+-]?\d+):(\d+)$/ and
-      constrain($1, -12, 14) and constrain($2, 0, 60)) {
+      _constrain($1, -12, 14) and _constrain($2, 0, 60)) {
         croak sprintf "Unknown timezone: %s", $tz
           unless eval { Time::Zone::Olson->new({timezone => $tz}); 1; };
     }
