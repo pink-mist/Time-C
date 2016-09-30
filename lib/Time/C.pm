@@ -99,7 +99,7 @@ method new ($c: $year = undef, $month = 1, $day = 1, $hour = 0, $minute = 0, $se
 
     my $tm = Time::Moment->new(year => $year, month => $month, day => $day, hour => $hour, minute => $minute, second => $second, offset => 0);
 
-    $c->gmtime($tm->epoch)->tz($tz);
+    $c->localtime($tm->epoch, $tz);
 }
 
 =head2 localtime
