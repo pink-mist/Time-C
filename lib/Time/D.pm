@@ -83,6 +83,22 @@ method _setter ($d: $key, $new) {
     };
 }
 
+method _computed_setter ($d: $key, $new) {
+    my %diff;
+    @diff{qw/ sign year month week day hour minute second /} = $d->to_array();
+
+    my $val = $diff{$key};
+
+    my $ct = Time::C->gmtime($d->comp);
+    return $val, sub {
+        $ct->$key -= $val - $_[0];
+        $d->comp = $ct->epoch;
+
+        return $d if defined $new;
+        return $_[0];
+    };
+}
+
 =head1 ACCESSORS
 
 These accessors will work as C<LVALUE>s, meaning you can assign to them to change the compared times.
@@ -137,12 +153,48 @@ method comp ($d: $new_comp = undef) :lvalue {
     sentinel value => $d->{comp}, set => $setter;
 }
 
-method _delta ($d: $key) {
-    my $bt = Time::C->gmtime($d->base);
-    my $ct = Time::C->gmtime($d->comp);
-    my $delta_key = "delta_$key";
+=head2 sign
 
-    return $bt->tm->$delta_key($ct->tm);
+  my $sign = $d->sign;
+  $d->sign = $sign;
+
+  $d = $d->sign($new_sign);
+
+Returns or sets the sign - whether the difference between C<< $d->base >> and C<< $d->comp >> is positive or negative, changing C<< $d->comp >> to either be before the base or after the base. The sign can be either C<+> or C<->.
+
+If the form C<< $d->sign($new_sign) >> is used, it likewise changes the sign but returns the entire object.
+
+=cut
+
+method sign ($d: $new_sign = undef) :lvalue {
+    my %diff;
+    @diff{qw/ sign year month week day hour minute second /} = $d->to_array();
+
+    my $sign = $diff{sign};
+
+    my $ct = Time::C->gmtime($d->comp);
+
+    my $setter = sub {
+        if ($_[0] ne '+' and $_[0] ne '-') { croak "Can't set a sign other than '+' or '-'."; }
+
+        if ($_[0] ne $sign) {
+            $ct->year -= (2*$diff{year});
+            $ct->month -= (2*$diff{month});
+            $ct->week -= (2*$diff{week});
+            $ct->day -= (2*$diff{day});
+            $ct->hour -= (2*$diff{hour});
+            $ct->minute -= (2*$diff{minute});
+            $ct->second -= (2*$diff{second});
+            $d->comp = $ct->epoch;
+        }
+
+        return $d if defined $new_sign;
+        return $_[0];
+    };
+
+    return $setter->($new_sign) if defined $new_sign;
+
+    sentinel value => $sign, set => $setter;
 }
 
 =head2 years
@@ -162,8 +214,7 @@ If the form C<< $d->years($new_years) >> is used, it likewise changes the differ
 =cut
 
 method years ($d: $new_years = undef) :lvalue {
-    my $years = $d->_delta('years');
-    my $setter = $d->_computed_setter('year', $years, $new_years);
+    my ($years, $setter) = $d->_computed_setter('year', $new_years);
 
     return $setter->($new_years) if defined $new_years;
 
@@ -187,8 +238,7 @@ If the form C<< $d->months($new_months) >> is used, it likewise changes the diff
 =cut
 
 method months ($d: $new_months = undef) :lvalue {
-    my $months = $d->_delta('months');
-    my $setter = $d->_computed_setter('month', $months, $new_months);
+    my ($months, $setter) = $d->_computed_setter('month', $new_months);
 
     return $setter->($new_months) if defined $new_months;
 
@@ -212,8 +262,7 @@ If the form C<< $d->weeks($new_weeks) >> is used, it likewise changes the differ
 =cut
 
 method weeks ($d: $new_weeks = undef) :lvalue {
-    my $weeks = $d->_delta('weeks');
-    my $setter = $d->_computed_setter('week', $weeks, $new_weeks);
+    my ($weeks, $setter) = $d->_computed_setter('week', $new_weeks);
 
     return $setter->($new_weeks) if defined $new_weeks;
 
@@ -237,8 +286,7 @@ If the form C<< $d->days($new_days) >> is used, it likewise changes the differen
 =cut
 
 method days ($d: $new_days = undef) :lvalue {
-    my $days = $d->_delta('days');
-    my $setter = $d->_computed_setter('day', $days, $new_days);
+    my ($days, $setter) = $d->_computed_setter('day', $new_days);
 
     return $setter->($new_days) if defined $new_days;
 
@@ -262,8 +310,7 @@ If the form C<< $d->hours($new_hours) >> is used, it likewise changes the differ
 =cut
 
 method hours ($d: $new_hours = undef) :lvalue {
-    my $hours = $d->_delta('hours');
-    my $setter = $d->_computed_setter('hour', $hours, $new_hours);
+    my ($hours, $setter) = $d->_computed_setter('hour', $new_hours);
 
     return $setter->($new_hours) if defined $new_hours;
 
@@ -287,8 +334,7 @@ If the form C<< $d->minutes($new_minutes) >> is used, it likewise changes the di
 =cut
 
 method minutes ($d: $new_minutes = undef) :lvalue {
-    my $minutes = $d->_delta('minutes');
-    my $setter = $d->_computed_setter('minute', $minutes, $new_minutes);
+    my ($minutes, $setter) = $d->_computed_setter('minute', $new_minutes);
 
     return $setter->($new_minutes) if defined $new_minutes;
 
@@ -312,8 +358,7 @@ If the form C<< $d->seconds($new_seconds) >> is used, it likewise changes the di
 =cut
 
 method seconds ($d: $new_seconds = undef) :lvalue {
-    my $seconds = $d->_delta('seconds');
-    my $setter = $d->_computed_setter('second', $seconds, $new_seconds);
+    my ($seconds, $setter) = $d->_computed_setter('second', $new_seconds);
 
     return $setter->($new_seconds) if defined $new_seconds;
 
