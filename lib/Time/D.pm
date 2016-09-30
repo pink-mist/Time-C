@@ -160,7 +160,7 @@ method comp ($d: $new_comp = undef) :lvalue {
 
   $d = $d->sign($new_sign);
 
-Returns or sets the sign - whether the difference between C<< $d->base >> and C<< $d->comp >> is positive or negative, changing C<< $d->comp >> to either be before the base or after the base. The sign can be either C<+> or C<->.
+Returns or sets the sign part of the difference - whether the difference between C<< $d->base >> and C<< $d->comp >> is positive or negative. Changing it changes C<< $d->comp >> to either be before the base or after the C<< $d->base >>. The sign can be either C<+> or C<->.
 
 If the form C<< $d->sign($new_sign) >> is used, it likewise changes the sign but returns the entire object.
 
@@ -207,9 +207,9 @@ method sign ($d: $new_sign = undef) :lvalue {
 
   $d = $d->years($new_years);
 
-Returns or sets the difference in years between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
+Returns or sets the year part of the difference between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
 
-If the form C<< $d->years($new_years) >> is used, it likewise changes the difference in years but returns the entire object.
+If the form C<< $d->years($new_years) >> is used, it likewise changes the year part of the difference but returns the entire object.
 
 =cut
 
@@ -231,9 +231,9 @@ method years ($d: $new_years = undef) :lvalue {
 
   $d = $d->months($new_months);
 
-Returns or sets the difference in months between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
+Returns or sets the month part of the difference between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
 
-If the form C<< $d->months($new_months) >> is used, it likewise changes the difference in months but returns the entire object.
+If the form C<< $d->months($new_months) >> is used, it likewise changes the month part of the difference but returns the entire object.
 
 =cut
 
@@ -255,9 +255,9 @@ method months ($d: $new_months = undef) :lvalue {
 
   $d = $d->weeks($new_weeks);
 
-Returns or sets the difference in weeks between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
+Returns or sets the week part of the difference between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
 
-If the form C<< $d->weeks($new_weeks) >> is used, it likewise changes the difference in weeks but returns the entire object.
+If the form C<< $d->weeks($new_weeks) >> is used, it likewise changes the week part of the difference but returns the entire object.
 
 =cut
 
@@ -279,9 +279,9 @@ method weeks ($d: $new_weeks = undef) :lvalue {
 
   $d = $d->days($new_days);
 
-Returns or sets the difference in days between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
+Returns or sets the day part of the difference between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
 
-If the form C<< $d->days($new_days) >> is used, it likewise changes the difference in days but returns the entire object.
+If the form C<< $d->days($new_days) >> is used, it likewise changes the day part of the difference but returns the entire object.
 
 =cut
 
@@ -303,9 +303,9 @@ method days ($d: $new_days = undef) :lvalue {
 
   $d = $d->hours($new_hours);
 
-Returns or sets the difference in hours between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
+Returns or sets the hour part of the difference between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
 
-If the form C<< $d->hours($new_hours) >> is used, it likewise changes the difference in hours but returns the entire object.
+If the form C<< $d->hours($new_hours) >> is used, it likewise changes the hour part of the difference but returns the entire object.
 
 =cut
 
@@ -327,9 +327,9 @@ method hours ($d: $new_hours = undef) :lvalue {
 
   $d = $d->minutes($new_minutes);
 
-Returns or sets the difference in minutes between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
+Returns or sets the minute part of the difference between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
 
-If the form C<< $d->minutes($new_minutes) >> is used, it likewise changes the difference in minutes but returns the entire object.
+If the form C<< $d->minutes($new_minutes) >> is used, it likewise changes the minute part of the difference but returns the entire object.
 
 =cut
 
@@ -351,9 +351,9 @@ method minutes ($d: $new_minutes = undef) :lvalue {
 
   $d = $d->seconds($new_seconds);
 
-Returns or sets the difference in seconds between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
+Returns or sets the second part of the difference between the C<< $d->base >> and the C<< $d->comp >>. If changed, it changes C<< $d->comp >>.
 
-If the form C<< $d->seconds($new_seconds) >> is used, it likewise changes the difference in seconds but returns the entire object.
+If the form C<< $d->seconds($new_seconds) >> is used, it likewise changes the second part of the difference but returns the entire object.
 
 =cut
 
@@ -373,7 +373,7 @@ method seconds ($d: $new_seconds = undef) :lvalue {
 
   my ($sign, $years, $months, $weeks, $days, $hours, $minutes, $seconds) = $d->to_array();
 
-Returns the difference between C<< $d->base >> and C<< $d->comp >> in the different units. This is different from accessing them via the accessors, because the accessors return the total difference in the specific unit you're asking for, while C<to_array> returns the units with previous units accounted for.
+Returns the difference between C<< $d->base >> and C<< $d->comp >> in the different units. This is like accessing them via the accessors, except you get everything in one single call. This method is what's used internally by the accessors to get their values.
 
 =over
 
