@@ -6,6 +6,7 @@ package Time::C;
 
 use overload (
     '""' => sub { shift->string },
+    bool => sub { 1 },
     fallback => 1,
 );
 
