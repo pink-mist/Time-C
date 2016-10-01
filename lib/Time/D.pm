@@ -177,16 +177,7 @@ method sign ($d: $new_sign = undef) :lvalue {
     my $setter = sub {
         if ($_[0] ne '+' and $_[0] ne '-') { croak "Can't set a sign other than '+' or '-'."; }
 
-        if ($_[0] ne $sign) {
-            $ct->year -= (2*$diff{year});
-            $ct->month -= (2*$diff{month});
-            $ct->week -= (2*$diff{week});
-            $ct->day -= (2*$diff{day});
-            $ct->hour -= (2*$diff{hour});
-            $ct->minute -= (2*$diff{minute});
-            $ct->second -= (2*$diff{second});
-            $d->comp = $ct->epoch;
-        }
+        if ($_[0] ne $sign) { $d->comp += 2*($d->base-$d->comp); }
 
         return $d if defined $new_sign;
         return $_[0];
