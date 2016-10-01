@@ -417,35 +417,39 @@ method to_array ($d:) {
     my $bt = Time::C->gmtime($d->base);
     my $ct = Time::C->gmtime($d->comp);
 
+    my $sign = $d->base > $d->comp ? '-' : '+';
+
     my $years = $bt->tm->delta_years($ct->tm);
     $ct->year -= $years;
+    if    ($sign eq '+' and $bt->epoch > $ct->epoch) { $years--; $ct->year++; }
+    elsif ($sign eq '-' and $bt->epoch < $ct->epoch) { $years++; $ct->year--; }
 
     my $months = $bt->tm->delta_months($ct->tm);
     $ct->month -= $months;
+    if    ($sign eq '+' and $bt->epoch > $ct->epoch) { $months--; $ct->month++; }
+    elsif ($sign eq '-' and $bt->epoch < $ct->epoch) { $months++; $ct->month--; }
 
     my $weeks = $bt->tm->delta_weeks($ct->tm);
     $ct->week -= $weeks;
+    if    ($sign eq '+' and $bt->epoch > $ct->epoch) { $weeks--; $ct->week++; }
+    elsif ($sign eq '-' and $bt->epoch < $ct->epoch) { $weeks++; $ct->week--; }
 
     my $days = $bt->tm->delta_days($ct->tm);
     $ct->day -= $days;
+    if    ($sign eq '+' and $bt->epoch > $ct->epoch) { $days--; $ct->day++; }
+    elsif ($sign eq '-' and $bt->epoch < $ct->epoch) { $days++; $ct->day--; }
 
     my $hours = $bt->tm->delta_hours($ct->tm);
     $ct->hour -= $hours;
+    if    ($sign eq '+' and $bt->epoch > $ct->epoch) { $hours--; $ct->hour++; }
+    elsif ($sign eq '-' and $bt->epoch < $ct->epoch) { $hours++; $ct->hour--; }
 
     my $minutes = $bt->tm->delta_minutes($ct->tm);
     $ct->minute -= $minutes;
+    if    ($sign eq '+' and $bt->epoch > $ct->epoch) { $minutes--; $ct->minute++; }
+    elsif ($sign eq '-' and $bt->epoch < $ct->epoch) { $minutes++; $ct->minute--; }
 
     my $seconds = $bt->tm->delta_seconds($ct->tm);
-
-    my $sign;
-
-    if    ($years   < 0) { $sign = '-'; } elsif ($years   > 0) { $sign = '+'; }
-    elsif ($months  < 0) { $sign = '-'; } elsif ($months  > 0) { $sign = '+'; }
-    elsif ($weeks   < 0) { $sign = '-'; } elsif ($weeks   > 0) { $sign = '+'; }
-    elsif ($days    < 0) { $sign = '-'; } elsif ($days    > 0) { $sign = '+'; }
-    elsif ($hours   < 0) { $sign = '-'; } elsif ($hours   > 0) { $sign = '+'; }
-    elsif ($minutes < 0) { $sign = '-'; } elsif ($minutes > 0) { $sign = '+'; }
-    elsif ($seconds < 0) { $sign = '-'; } else                 { $sign = '+'; }
 
     if ($sign eq '-') {
         ($years, $months, $weeks, $days, $hours, $minutes, $seconds) =
