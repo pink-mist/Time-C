@@ -869,6 +869,8 @@ __END__
 
 =over
 
+=item L<Time::D>
+
 =item L<Time::Moment>
 
 =item L<Time::Piece>
