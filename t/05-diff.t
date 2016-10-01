@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 24;
+use Test::More tests => 31;
 
 use Time::D;
 use Time::C;
@@ -35,14 +35,6 @@ is ($d->to_string(4), "in 1 year, 1 month, 1 day, and 5 hours", "correct ->to_st
 is ($d->to_string(5), "in 1 year, 1 month, 1 day, 5 hours, and 10 minutes", "correct ->to_string(5)");
 is ($d->to_string(6), "in 1 year, 1 month, 1 day, 5 hours, 10 minutes, and 10 seconds", "correct ->to_string(6)");
 
-#Before:    2015 - 10 - 07 T 11 : 45 : 00
-#           -1y         3d        15m 
-#
-#Base:      2016 - 10 - 10 T 12 : 00 : 00
-#
-#           +1y         3d        15m
-#After:     2017 - 10 - 13 T 12 : 15 : 00
-
 my $t_base = Time::C->new(2016,10,10,12,0,0);
 my $t_after = Time::C->new(2017,10,13,12,15,0);
 my $t_before = Time::C->new(2015,10,7,11,45,0);
@@ -54,5 +46,25 @@ my $d3 = Time::D->new($t_base->epoch, $t_before->epoch);
 is ($d3->to_string(7), "1 year, 3 days, and 15 minutes ago", "d3 diff correct");
 
 $d2->sign = '-';
-is ($d2->comp, $t_before->epoch, "d2->comp changed epoch correctly by changing sign");
-is ($d2->to_string(7), "1 year, 3 days, and 15 minutes ago", "d2 diff correct after changing sign");
+is ($d2->comp, $t_before->epoch + 3600*24, "d2->comp changed epoch correctly by changing sign");
+is ($d2->to_string(7), "1 year, 2 days, and 15 minutes ago", "d2 diff correct after changing sign");
+
+my $t2_base = Time::C->new(2016,10,10,15);
+my $t2_after = Time::C->new(2017,12,13,22,15);
+my $t2_before = Time::C->new(2015,8,7,7,45);
+
+my $d4 = Time::D->new($t2_base->epoch, $t2_after->epoch);
+is ($d4->to_string(7), "in 1 year, 2 months, 3 days, 7 hours, and 15 minutes", "d4 diff correct");
+
+my $d5 = Time::D->new($t2_base->epoch, $t2_before->epoch);
+is ($d5->to_string(7), "1 year, 2 months, 3 days, 7 hours, and 15 minutes ago", "d5 diff correct");
+
+$d5->sign = '+';
+is ($d5->comp, $t2_after->epoch+24*3600, "d5->comp has correct epoch");
+is (Time::C->gmtime($d5->comp), "2017-12-14T22:15:00Z", "d5->comp represents the correct time");
+
+my $d6 = Time::C->new(2016,03,10,21,0,5)->diff(Time::C->new(2016,02,20,23,0,40));
+is ($d6->to_string(7), "2 weeks, 4 days, 21 hours, 59 minutes, and 25 seconds ago", "d6 correct");
+$d6->sign = '+';
+is ($d6->to_string(7), "in 2 weeks, 4 days, 21 hours, 59 minutes, and 25 seconds", "d6 with changed sign correct");
+is (Time::C->gmtime($d6->comp), "2016-03-29T18:59:30Z", "d6 with changed sign correct time");
