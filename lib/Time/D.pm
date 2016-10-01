@@ -578,5 +578,9 @@ This is what this module uses internally to calculate the different units.
 
 Breaks up numbers into arbitrary denominations; deals excellently with durations as well, though it works in the same way as C<Time::Seconds>.
 
+=item L<Time::Ago>
+
+Like C<Time::Seconds> and C<Number::Denominal> it doesn't care about real dates when determining a timespan, and it specifically states that it is only an approximation.
+
 =back
 
