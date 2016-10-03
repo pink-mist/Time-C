@@ -160,7 +160,7 @@ method comp ($d: $new_comp = undef) :lvalue {
 
   $d = $d->sign($new_sign);
 
-Returns or sets the sign part of the difference - whether the difference between C<< $d->base >> and C<< $d->comp >> is positive or negative. Changing it changes C<< $d->comp >> to either be before the base or after the C<< $d->base >>. The sign can be either C<+> or C<->.
+Returns or sets the sign part of the difference - whether the difference between C<< $d->base >> and C<< $d->comp >> is positive or negative. Changing it changes C<< $d->comp >> to either be before the C<< $d->base >> or after it. The sign can be either C<+> or C<->.
 
 If the form C<< $d->sign($new_sign) >> is used, it likewise changes the sign but returns the entire object.
 
