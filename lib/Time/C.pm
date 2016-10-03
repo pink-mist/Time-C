@@ -861,6 +861,20 @@ method diff ($t: $t2) {
     return Time::D->new($t->epoch, $epoch);
 }
 
+=head2 clone
+
+  my $t2 = $t1->clone();
+
+Returns a copy of C<$t1>.
+
+=cut
+
+method clone($t:) {
+    my $c = ref $t;
+
+    return $c->localtime($t->epoch, $t->tz);
+}
+
 1;
 
 __END__
