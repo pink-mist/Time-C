@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.010     2016-10-02 00:10:55+02:00 Europe/Stockholm
   - Add Time::Ago to See Also section of Time::D.
   - Change how Time::D->sign works.
   - Fix bugs in Time::D->to_array().
