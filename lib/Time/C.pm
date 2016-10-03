@@ -885,6 +885,8 @@ __END__
 
 =item L<Time::D>
 
+=item L<Time::R>
+
 =item L<Time::Moment>
 
 =item L<Time::Piece>
