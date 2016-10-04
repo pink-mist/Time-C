@@ -105,12 +105,8 @@ This should be the number of seconds between each recurrence. Defaults to C<0>.
 =cut
 
 method new ($c: $start, :$end = undef, :$years = 0, :$months = 0, :$weeks = 0, :$days = 0, :$hours = 0, :$minutes = 0, :$seconds = 0) {
-    croak "Not a Time::C object: $start" unless ref $start and $start->isa('Time::C');
-    croak "Not a Time::C object: end => $end" if defined $end and not (ref $end and $end->isa('Time::C'));
-
-    bless {
+    bless({
         start   => $start,
-        current => $start->clone(),
         end     => $end,
         years   => $years,
         months  => $months,
@@ -119,7 +115,26 @@ method new ($c: $start, :$end = undef, :$years = 0, :$months = 0, :$weeks = 0, :
         hours   => $hours,
         minutes => $minutes,
         seconds => $seconds,
-    }, $c;
+    }, $c)->_validate_start($start)->_validate_end($end);
+}
+
+method _validate_end ($r: $new_end) {
+    if (defined $new_end) {
+        croak "->end(): Not a Time::C object: $new_end" unless ref $new_end and $new_end->isa('Time::C');
+        croak "->end() time is before ->start() time." if $r->start->epoch > $new_end->epoch;
+    }
+
+    return $r;
+}
+
+method _validate_start ($r: $new_start) {
+    croak "->start(): Not a Time::C object: $new_start" unless ref $new_start and $new_start->isa('Time::C');
+
+    if (defined $r->end and ref $r->end and $r->end->isa('Time::C')) {
+        croak "->end() time is before ->start() time." if $new_start->epoch > $r->end->epoch;
+    }
+
+    return $r;
 }
 
 =head1 ACCESSORS
