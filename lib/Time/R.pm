@@ -146,9 +146,26 @@ method _validate_start ($r: $new_start) {
   my $start = $r->start;
   $r->start = $start;
 
+  $r = $r->start($new_start);
+
 Returns or sets the L<Time::C> object representing the starting time of the recurrence. Setting this also calls C<< $r->reset() >>.
 
+If the form C<< $r->start($new_start) >> is used, it likewise updates the start but returns the entire object.
+
 =cut
+
+method start ($r: $new_start = undef) {
+    my $setter = sub {
+        $r->_validate_start($_[0])->{start} = $_[0];
+
+        return $r if defined $new_start;
+        return $_[0];
+    };
+
+    return $setter->($new_start) if defined $new_start;
+
+    sentinel value => $r->{start}, set => $setter;
+}
 
 =head2 current
 
