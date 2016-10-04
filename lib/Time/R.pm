@@ -122,4 +122,85 @@ method new ($c: $start, :$end = undef, :$years = 0, :$months = 0, :$weeks = 0, :
     }, $c;
 }
 
+=head1 ACCESSORS
+
+=cut
+
+=head2 start
+
+=cut
+
+=head2 current
+
+=cut
+
+=head2 end
+
+=cut
+
+=head2 years
+
+=cut
+
+=head2 months
+
+=cut
+
+=head2 weeks
+
+=cut
+
+=head2 days
+
+=cut
+
+=head2 hours
+
+=cut
+
+=head2 minutes
+
+=cut
+
+=head2 seconds
+
+=cut
+
+=head1 METHODS
+
+=cut
+
+=head2 next
+
+=cut
+
+=head2 upcoming
+
+=cut
+
+=head2 latest
+
+=cut
+
+=head2 until
+
+=cut
+
+=head2 reset
+
+=cut
+
 1;
+
+__END__
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Time::C>
+
+=item L<Time::D>
+
+=back
+
