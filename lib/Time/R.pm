@@ -315,6 +315,10 @@ Resets C<< $r->current >> to C<< $r->start >>.
 
 =cut
 
+method reset ($r:) {
+    $r->current = $r->start->clone();
+}
+
 1;
 
 __END__
