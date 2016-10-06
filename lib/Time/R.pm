@@ -208,6 +208,19 @@ Returns or sets the L<Time::C> object representing the end time of the recurrenc
 
 =cut
 
+method end ($r: $new_end = undef) {
+    my $setter = sub {
+        $r->_validate_end($_[0])->{end} = $_[0];
+
+        return $r if defined $new_end;
+        return $_[0];
+    };
+
+    return $setter->($new_end) if defined $new_end;
+
+    sentinel value => $r->{end}, set => $setter;
+}
+
 =head2 years
 
   my $years = $r->years;
