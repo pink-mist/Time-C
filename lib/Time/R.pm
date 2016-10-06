@@ -137,6 +137,12 @@ method _validate_start ($r: $new_start) {
     return $r;
 }
 
+method _validate_current ($r: $new_current) {
+    croak "->current(): Not a Time::C object: $new_current" unless ref $new_current and $new_current->isa('Time::C');
+
+    return $r;
+}
+
 =head1 ACCESSORS
 
 =cut
@@ -177,6 +183,21 @@ Returns or sets the L<Time::C> object representing the current time of the curre
 This may get changed by C<< $r->next >>, C<< $r->upcoming >>, C<< $r->latest >>, C<< $r->until >>, and C<< $r->reset >>.
 
 =cut
+
+method current ($r: $new_current = undef) {
+    my $current = $r->{current} // $r->start->clone();
+
+    my $setter = sub {
+        $r->_validate_current($_[0])->{current} = $_[0];
+
+        return $r if defined $new_current;
+        return $_[0];
+    };
+
+    return $setter->($new_current) if defined $new_current;
+
+    sentinel value => $current, set => $new_current;
+}
 
 =head2 end
 
