@@ -121,7 +121,6 @@ method new ($c: $start, :$end = undef, :$years = 0, :$months = 0, :$weeks = 0, :
 method _validate_end ($r: $new_end) {
     if (defined $new_end) {
         croak "->end(): Not a Time::C object: $new_end" unless ref $new_end and $new_end->isa('Time::C');
-        croak "->end() time is before ->start() time." if $r->start->epoch > $new_end->epoch;
     }
 
     return $r;
@@ -129,10 +128,6 @@ method _validate_end ($r: $new_end) {
 
 method _validate_start ($r: $new_start) {
     croak "->start(): Not a Time::C object: $new_start" unless ref $new_start and $new_start->isa('Time::C');
-
-    if (defined $r->end and ref $r->end and $r->end->isa('Time::C')) {
-        croak "->end() time is before ->start() time." if $new_start->epoch > $r->end->epoch;
-    }
 
     return $r;
 }
