@@ -228,6 +228,16 @@ Returns or sets the number of years between each recurrence. Setting this also c
 
 =cut
 
+method years ($r: $new_years = undef) {
+    my $setter = sub {
+        return $r->{years} = $_[0];
+    };
+
+    if (defined $new_years) { $setter->($new_years); return $r; }
+
+    sentinel value => $r->{years}, set => $setter;
+}
+
 =head2 months
 
   my $months = $r->months;
@@ -239,6 +249,16 @@ Returns or sets the number of years between each recurrence. Setting this also c
 Returns or sets the number of months between each recurrence. Setting this also calls C<< $r->reset() >>.
 
 =cut
+
+method months ($r: $new_months = undef) {
+    my $setter = sub {
+        return $r->{months} = $_[0];
+    };
+
+    if (defined $new_months) { $setter->($new_months); return $r; }
+
+    sentinel value => $r->{months}, set => $setter;
+}
 
 =head2 weeks
 
@@ -252,6 +272,16 @@ Returns or sets the number of weeks between each recurrence. Setting this also c
 
 =cut
 
+method weeks ($r: $new_weeks = undef) {
+    my $setter = sub {
+        return $r->{weeks} = $_[0];
+    };
+
+    if (defined $new_weeks) { $setter->($new_weeks); return $r; }
+
+    sentinel value => $r->{weeks}, set => $setter;
+}
+
 =head2 days
 
   my $days = $r->days;
@@ -263,6 +293,16 @@ Returns or sets the number of weeks between each recurrence. Setting this also c
 Returns or sets the number of days between each recurrence. Setting this also calls C<< $r->reset() >>.
 
 =cut
+
+method days ($r: $new_days = undef) {
+    my $setter = sub {
+        return $r->{days} = $_[0];
+    };
+
+    if (defined $new_days) { $setter->($new_days); return $r; }
+
+    sentinel value => $r->{days}, set => $setter;
+}
 
 =head2 hours
 
@@ -276,6 +316,16 @@ Returns or sets the number of hours between each recurrence. Setting this also c
 
 =cut
 
+method hours ($r: $new_hours = undef) {
+    my $setter = sub {
+        return $r->{hours} = $_[0];
+    };
+
+    if (defined $new_hours) { $setter->($new_hours); return $r; }
+
+    sentinel value => $r->{hours}, set => $setter;
+}
+
 =head2 minutes
 
   my $minutes = $r->minutes;
@@ -288,6 +338,16 @@ Returns or sets the number of minutes between each recurrence. Setting this also
 
 =cut
 
+method minutes ($r: $new_minutes = undef) {
+    my $setter = sub {
+        return $r->{minutes} = $_[0];
+    };
+
+    if (defined $new_minutes) { $setter->($new_minutes); return $r; }
+
+    sentinel value => $r->{minutes}, set => $setter;
+}
+
 =head2 seconds
 
   my $seconds = $r->seconds;
@@ -299,6 +359,16 @@ Returns or sets the number of minutes between each recurrence. Setting this also
 Returns or sets the number of seconds between each recurrence. Setting this also calls C<< $r->reset() >>.
 
 =cut
+
+method seconds ($r: $new_seconds = undef) {
+    my $setter = sub {
+        return $r->{seconds} = $_[0];
+    };
+
+    if (defined $new_seconds) { $setter->($new_seconds); return $r; }
+
+    sentinel value => $r->{seconds}, set => $setter;
+}
 
 =head1 METHODS
 
