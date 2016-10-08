@@ -406,6 +406,17 @@ Returns all the recurrences that will happen from C<< $r->current >> until C<$en
 
 =cut
 
+method until ($r: $end) {
+    croak "\$end is not a Time::C object" unless ref $end and $end->isa('Time::C');
+    $end = $r->end if $r->end->epoch < $end->epoch;
+
+    my @results;
+    push @results, $_ while ($_ = $r->next() and $_->epoch < $end->epoch);
+    $r->current = $results[-1] if @results;
+
+    return @results;
+}
+
 =head2 reset
 
   $r->reset();
