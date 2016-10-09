@@ -402,7 +402,7 @@ Sets C<< $r->current >> to and returns the latest time the recurrence occurs as 
 
   my @until = $r->until($end);
 
-Returns all the recurrences that will happen from C<< $r->current >> until C<$end> (which should be a L<Time::C> object), and updates C<< $r->current >> to the last one returned if any. If C<$end> is after C<< $r->end >> if defined, it will instead use C<< $r->end >> as the limit.
+Returns all the recurrences that will happen from C<< $r->current >> until C<$end> (which should be a L<Time::C> object), and updates C<< $r->current >> to the last one returned if any. If C<< $r->end >> is defined and C<$end> is after, it will instead use C<< $r->end >> as the limit.
 
 =cut
 
