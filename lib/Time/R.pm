@@ -411,7 +411,7 @@ method until ($r: $end) {
     $end = $r->end if $r->end->epoch < $end->epoch;
 
     my @results = $r->current();
-    push @results, $_ while ($_ = $r->next() and $_->epoch < $end->epoch);
+    push @results, $_ while ($_ = $r->next() and $_->epoch <= $end->epoch);
     $r->current = $results[-1] if @results;
 
     return @results;
