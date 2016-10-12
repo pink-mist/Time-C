@@ -427,6 +427,7 @@ Resets C<< $r->current >> to C<< $r->start >>.
 
 method reset ($r:) {
     $r->current = $r->start->clone();
+    return $r;
 }
 
 1;
