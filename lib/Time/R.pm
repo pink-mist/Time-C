@@ -398,6 +398,14 @@ Sets C<< $r->current >> to and returns the latest time the recurrence occurs as 
 
 =cut
 
+method latest ($r:) {
+    # $r->reset();
+    # my @until = $r->reset->until(Time::C->now($r->start->tz));
+    my @until = $r->until(Time::C->now($r->start->tz));
+
+    return $until[-1];
+}
+
 =head2 until
 
   my @until = $r->until($end);
