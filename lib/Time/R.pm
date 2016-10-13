@@ -390,6 +390,11 @@ Sets C<< $r->current >> to and returns the next time the recurrence occurs as a 
 
 =cut
 
+method upcoming ($r:) {
+    $r->latest();
+    return $r->next();
+}
+
 =head2 latest
 
   my $latest = $r->latest();
