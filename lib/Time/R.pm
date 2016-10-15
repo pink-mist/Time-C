@@ -183,7 +183,7 @@ method current ($r: $new_current = undef) {
     my $current = $r->{current} // $r->start->clone();
 
     my $setter = sub {
-        $r->_validate_current($_[0])->{current} = $_[0];
+        $r->{current} = $_[0];
 
         return $r if defined $new_current;
         return $_[0];
