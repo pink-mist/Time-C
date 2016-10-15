@@ -132,12 +132,6 @@ method _validate_start ($r: $new_start) {
     return $r;
 }
 
-method _validate_current ($r: $new_current) {
-    croak "->current(): Not a Time::C object: $new_current" unless ref $new_current and $new_current->isa('Time::C');
-
-    return $r;
-}
-
 =head1 ACCESSORS
 
 =cut
