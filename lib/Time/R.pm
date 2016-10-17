@@ -115,7 +115,7 @@ method new ($c: $start, :$end = undef, :$years = 0, :$months = 0, :$weeks = 0, :
         hours   => $hours,
         minutes => $minutes,
         seconds => $seconds,
-    }, $c)->_validate_start($start)->_validate_end($end);
+    }, $c)->_validate_start($start);
 }
 
 method _validate_end ($r: $new_end) {
