@@ -118,14 +118,6 @@ method new ($c: $start, :$end = undef, :$years = 0, :$months = 0, :$weeks = 0, :
     }, $c)->_validate_start($start);
 }
 
-method _validate_end ($r: $new_end) {
-    if (defined $new_end) {
-        croak "->end(): Not a Time::C object: $new_end" unless ref $new_end and $new_end->isa('Time::C');
-    }
-
-    return $r;
-}
-
 method _validate_start ($r: $new_start) {
     croak "->start(): Not a Time::C object: $new_start" unless ref $new_start and $new_start->isa('Time::C');
 
