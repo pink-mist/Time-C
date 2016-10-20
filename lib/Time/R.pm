@@ -368,6 +368,41 @@ Sets C<< $r->current >> to and returns the next recurrence as a L<Time::C> objec
 
 =cut
 
+method next ($r:) {
+    my $c = $r->current;
+    my $n = $r->start->clone;
+
+    if ($r->years) {
+        my $i = 1;
+        LOOP: {
+            my $y = $n->clone;
+            $y->year += ($r->years * $i++);
+            redo LOOP if $y->epoch < $c->epoch;
+
+            $n = $y;
+        }
+    }
+    if ($r->months) {
+        my $i = 1;
+        LOOP: {
+            my $m = $n->clone;
+            $m->month += ($r->months * $i++);
+            redo LOOP if $m->epoch < $c->epoch;
+
+            $n = $m;
+        }
+    }
+    if ($r->weeks)   { do { $n->week   += $r->weeks   } until $n->epoch > $c->epoch; }
+    if ($r->days)    { do { $n->day    += $r->days    } until $n->epoch > $c->epoch; }
+    if ($r->hours)   { do { $n->hour   += $r->hours   } until $n->epoch > $c->epoch; }
+    if ($r->minutes) { do { $n->minute += $r->minutes } until $n->epoch > $c->epoch; }
+    if ($r->seconds) { do { $n->second += $r->seconds } until $n->epoch > $c->epoch; }
+    return undef if defined $r->end and $n->epoch > $r->end->epoch;
+
+    $r->current = $n;
+    return $n;
+}
+
 =head2 upcoming
 
   my $upcoming = $r->upcoming();
