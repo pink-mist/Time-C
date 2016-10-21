@@ -2,6 +2,7 @@ use strict;
 use warnings;
 package Time::C::Sentinel;
 
+use Carp qw/ croak /;
 use Exporter qw/ import /;
 
 our @EXPORT = qw/ sentinel /;
@@ -11,6 +12,8 @@ sub sentinel :lvalue {
 
     my $value = $args{value};
     my $set   = $args{set};
+
+    croak "sentinel: no setter given" unless defined $set;
 
     tie my $ret, __PACKAGE__, $value, $set;
 
