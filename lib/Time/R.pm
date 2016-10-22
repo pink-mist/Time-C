@@ -141,7 +141,7 @@ If the form C<< $r->start($new_start) >> is used, it likewise updates the start 
 
 =cut
 
-method start ($r: $new_start = undef) {
+method start ($r: $new_start = undef) :lvalue {
     my $setter = sub {
         $r->_validate_start($_[0])->{start} = $_[0];
 
@@ -165,7 +165,7 @@ This may get changed by C<< $r->next >>, C<< $r->upcoming >>, C<< $r->latest >>,
 
 =cut
 
-method current ($r: $new_current = undef) {
+method current ($r: $new_current = undef) :lvalue {
     my $current = $r->{current} // $r->start->clone();
 
     my $setter = sub {
@@ -189,7 +189,7 @@ Returns or sets the L<Time::C> object representing the end time of the recurrenc
 
 =cut
 
-method end ($r: $new_end = undef) {
+method end ($r: $new_end = undef) :lvalue {
     my $setter = sub {
         $r->{end} = $_[0];
 
@@ -214,7 +214,7 @@ Returns or sets the number of years between each recurrence. Setting this also c
 
 =cut
 
-method years ($r: $new_years = undef) {
+method years ($r: $new_years = undef) :lvalue {
     my $setter = sub {
         return $r->{years} = $_[0];
     };
@@ -236,7 +236,7 @@ Returns or sets the number of months between each recurrence. Setting this also 
 
 =cut
 
-method months ($r: $new_months = undef) {
+method months ($r: $new_months = undef) :lvalue {
     my $setter = sub {
         return $r->{months} = $_[0];
     };
@@ -258,7 +258,7 @@ Returns or sets the number of weeks between each recurrence. Setting this also c
 
 =cut
 
-method weeks ($r: $new_weeks = undef) {
+method weeks ($r: $new_weeks = undef) :lvalue {
     my $setter = sub {
         return $r->{weeks} = $_[0];
     };
@@ -280,7 +280,7 @@ Returns or sets the number of days between each recurrence. Setting this also ca
 
 =cut
 
-method days ($r: $new_days = undef) {
+method days ($r: $new_days = undef) :lvalue {
     my $setter = sub {
         return $r->{days} = $_[0];
     };
@@ -302,7 +302,7 @@ Returns or sets the number of hours between each recurrence. Setting this also c
 
 =cut
 
-method hours ($r: $new_hours = undef) {
+method hours ($r: $new_hours = undef) :lvalue {
     my $setter = sub {
         return $r->{hours} = $_[0];
     };
@@ -324,7 +324,7 @@ Returns or sets the number of minutes between each recurrence. Setting this also
 
 =cut
 
-method minutes ($r: $new_minutes = undef) {
+method minutes ($r: $new_minutes = undef) :lvalue {
     my $setter = sub {
         return $r->{minutes} = $_[0];
     };
@@ -346,7 +346,7 @@ Returns or sets the number of seconds between each recurrence. Setting this also
 
 =cut
 
-method seconds ($r: $new_seconds = undef) {
+method seconds ($r: $new_seconds = undef) :lvalue {
     my $setter = sub {
         return $r->{seconds} = $_[0];
     };
