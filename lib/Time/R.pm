@@ -177,7 +177,7 @@ method current ($r: $new_current = undef) :lvalue {
 
     return $setter->($new_current) if defined $new_current;
 
-    sentinel value => $current, set => $new_current;
+    sentinel value => $current, set => $setter;
 }
 
 =head2 end
