@@ -377,7 +377,7 @@ method next ($r:) {
         LOOP: {
             my $y = $n->clone;
             $y->year += ($r->years * $i++);
-            redo LOOP if $y->epoch < $c->epoch;
+            redo LOOP if $y->epoch <= $c->epoch;
 
             $n = $y;
         }
@@ -387,7 +387,7 @@ method next ($r:) {
         LOOP: {
             my $m = $n->clone;
             $m->month += ($r->months * $i++);
-            redo LOOP if $m->epoch < $c->epoch;
+            redo LOOP if $m->epoch <= $c->epoch;
 
             $n = $m;
         }
