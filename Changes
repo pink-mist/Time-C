@@ -1,4 +1,9 @@
 {{$NEXT}}
+  - Add Time::R for handling recurrences.
+  - Make Time::C::Sentinel's sentinel() croak if no setter is given.
+  - Add ->clone method to Time::C.
+  - Add Time::R to SEE ALSO section of Time::C.
+  - Small fixup in Time::D's ->sign docs.
 
 0.010     2016-10-02 00:10:55+02:00 Europe/Stockholm
   - Add Time::Ago to See Also section of Time::D.
