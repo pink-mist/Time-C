@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.011     2016-10-27 19:04:45+02:00 Europe/Stockholm
   - Add Time::R for handling recurrences.
   - Make Time::C::Sentinel's sentinel() croak if no setter is given.
   - Add ->clone method to Time::C.
