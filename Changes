@@ -1,4 +1,11 @@
 {{$NEXT}}
+  - Add ->strptime constructor in Time::C.
+  - Add ->strftime method alias for ->string in Time::C.
+  - Add ->second_of_day accessor in Time::C.
+  - When parsing a string with a format, report error.
+  - Add $override parameter to ->tz accessor in Time::C.
+  - Fix Time::R methods so they work according to docs.
+  - Expand Time::C's SEE ALSO section with notes.
 
 0.011     2016-10-27 19:04:45+02:00 Europe/Stockholm
   - Add Time::R for handling recurrences.
