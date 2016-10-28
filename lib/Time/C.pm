@@ -883,6 +883,39 @@ method second ($t: $new_second = undef) :lvalue {
     sentinel value => $tm->second, set => $setter;
 }
 
+=head2 second_of_day
+
+  my $second = $t->second_of_day;
+  $t->second_of_day = $second;
+  $t->second_of_day += 86400;
+  $t->second_of_day++;
+  $t->second_of_day--;
+
+  $t = $t->second_of_day($new_second);
+
+Returns or sets the current second of the day, updating the epoch accordingly.
+
+If the form C<< $t->second_of_day($new_second) >> is used, it likewise sets the current second but returns the entire object.
+
+The second is 0-based where second 0 is the first second of the day. Legal values are in the range 0-86399.
+
+=cut
+
+method second_of_day ($t: $new_second = undef) :lvalue {
+    my $tm = $t->tm();
+
+    my $setter = sub {
+        my $ret = ($t->tm = $tm->plus_seconds($_[0] - $tm->second_of_day))->second_of_day;
+
+        return $t if defined $new_second;
+        return $ret;
+    };
+
+    return $setter->($new_second) if defined $new_second;
+
+    sentinel value => $tm->second_of_day, set => $setter;
+}
+
 =head1 METHODS
 
 =cut
