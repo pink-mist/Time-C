@@ -412,8 +412,11 @@ Sets C<< $r->current >> to and returns the next time the recurrence occurs as a 
 =cut
 
 method upcoming ($r:) {
+    my $c = $r->current->clone;
     $r->latest();
-    return $r->next();
+    my $n = $r->next();
+    $r->current = $c if not defined $n;
+    return $n;
 }
 
 =head2 latest
