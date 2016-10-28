@@ -927,13 +927,23 @@ __END__
 
 =item L<Time::D>
 
+Like C<Time::C> but for durations.
+
 =item L<Time::R>
+
+If you need C<Time::C> times to recurr at regular intervals.
 
 =item L<Time::Moment>
 
+This implements most of the logic of this module.
+
 =item L<Time::Piece>
 
+For parsing times from strings using an strptime format.
+
 =item L<Time::Zone::Olson>
+
+Interfaces with the Olson timezone database.
 
 =back
 
