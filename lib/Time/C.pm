@@ -292,11 +292,12 @@ fun _get_tz ($offset) {
 fun _parse ($str, $format = undef, $tz = 'UTC') {
     my $tp;
     $tp = eval { Time::Piece->strptime($str, $format); } if defined $format;
-    my $tm = eval { defined $tp ?
-        Time::Moment->from_object($tp) :
+    my $tm = eval { defined $format ?
+        Time::Moment->from_object($tp // die) :
         Time::Moment->from_string($str);
     };
 
+    croak sprintf "Could not parse %s using %s.", $str, $format if not defined $tm and defined $format;
     croak sprintf "Could not parse %s.", $str if not defined $tm;
 
     my $epoch = $tm->epoch;
@@ -471,7 +472,7 @@ method tm ($t: $new_tm = undef) :lvalue {
 
   $t = $t->string($format, $new_str);
 
-Renders the current time to a string using the optional strftime C<$format>. If the C<$format> is not given it defaults to C<undef>. When setting this value, it tries to parse the string using L<Time::Piece/strptime> with the C<$format> or L<Time::Moment/from_string> if no C<$format> was given or strptime fails. If the detected C<offset> matches the current C<tz>, that is kept, otherwise it will get changed to a generic C<tz> in the form of C<Etc/GMT+X> or C<+XX:XX>.
+Renders the current time to a string using the optional strftime C<$format>. If the C<$format> is not given it defaults to C<undef>. When setting this value, it tries to parse the string using L<Time::Piece/strptime> with the C<$format> or L<Time::Moment/from_string> if no C<$format> was given. If the detected C<offset> matches the current C<tz>, that is kept, otherwise it will get changed to a generic C<tz> in the form of C<Etc/GMT+X> or C<+XX:XX>.
 
 If the form C<< $t->string($format, $new_str) >> is used, it likewise updates the epoch and timezone but returns the entire object.
 
