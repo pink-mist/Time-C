@@ -3,8 +3,6 @@ package Time::P;
 use Carp qw/ croak /;
 use Exporter qw/ import /;
 use Function::Parameters qw/ :strict /;
-use Time::Moment;
-use DateTime::Locale;
 
 our @EXPORT = qw/ strptime /;
 
