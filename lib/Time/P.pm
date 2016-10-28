@@ -323,7 +323,7 @@ my %parser; %parser = (
 
     '%z' => fun ($str, $pos, $struct) {
         pos($str) = $pos;
-        if ($str =~ /\G([-+][0-9][0-9](?:[0-9][0-9])?)/) { return $struct->{'%z'} = $1; }
+        if ($str =~ /\G([-+][0-9][0-9](?::?[0-9][0-9])?)/) { return $struct->{'%z'} = $1; }
         return undef;
     },
 
@@ -517,7 +517,7 @@ fun _mktime ($struct) {
 }
 
 fun _offset_to_minutes ($offset) {
-    my ($sign, $hours, $minutes) = $offset =~ m/^([+-])([0-9][0-9])([0-9][0-9])?$/;
+    my ($sign, $hours, $minutes) = $offset =~ m/^([+-])([0-9][0-9]):?([0-9][0-9])?$/;
     return $sign eq '+' ? ($hours * 60 + $minutes) : -($hours * 60 + $minutes);
 }
 
