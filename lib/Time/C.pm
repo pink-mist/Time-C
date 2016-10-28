@@ -352,16 +352,24 @@ method epoch ($t: $new_epoch = undef) :lvalue {
   $t->tz = $tz;
 
   $t = $t->tz($new_tz);
+  $t = $t->tz($new_tz, $override);
 
 Returns or sets the timezone. If the timezone can't be recognised it dies.
 
 If the form C<< $t->tz($new_tz) >> is used, it likewise changes the timezone but returns the entire object.
 
+If C<$override> is a C<true> value, it changes the C<< $t->epoch >> as well, so that the date/time remains the same, but in a new timezone.
+
 =cut
 
-method tz ($t: $new_tz = undef) :lvalue {
+method tz ($t: $new_tz = undef, $override = 0) :lvalue {
     my $setter = sub {
         _verify_tz($_[0]);
+
+        if ($override) {
+            my $l = Time::C->new($t->year, $t->month, $t->day, $t->hour, $t->minute, $t->second, $_[0]);
+            $t->epoch = $l->epoch;
+        }
 
         $t->{tz} = $_[0];
         return $t if defined $new_tz;
