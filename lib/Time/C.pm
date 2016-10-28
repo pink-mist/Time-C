@@ -290,15 +290,17 @@ fun _get_tz ($offset) {
 }
 
 fun _parse ($str, $format = undef, $tz = 'UTC') {
-    my $tp;
-    $tp = eval { Time::Piece->strptime($str, $format); } if defined $format;
-    my $tm = eval { defined $format ?
-        Time::Moment->from_object($tp // die) :
-        Time::Moment->from_string($str);
-    };
+    my $tm;
 
-    croak sprintf "Could not parse %s using %s.", $str, $format if not defined $tm and defined $format;
-    croak sprintf "Could not parse %s.", $str if not defined $tm;
+    if (defined $format) {
+        my $tp = eval { local $ENV{TZ} = $tz; Time::Piece->localtime->strptime($str, $format); };
+        croak sprintf "Could not parse %s using %s.", $str, $format if not defined $tp;
+
+        $tm = Time::Moment->from_object($tp);
+    } else {
+        $tm = eval { Time::Moment->from_string($str); };
+        croak sprintf "Could not parse %s.", $str if not defined $tm;
+    }
 
     my $epoch = $tm->epoch;
     my $offset = $tm->offset;
