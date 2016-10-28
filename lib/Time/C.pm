@@ -216,6 +216,32 @@ method from_string ($c: $str, $format = undef, $expected_tz = 'UTC') {
     bless {epoch => $p[0], tz => $p[1]}, $c;
 }
 
+=head2 strptime
+
+  my $t = Time::C->strptime($str, $format);
+
+Creates a Time::C object for the specified C<$str> using the C<$format> to parse it with L<Time::Piece/strptime>.
+
+=over
+
+=item C<$str>
+
+This is the string that will be parsed by L<Time::Piece/strptime>.
+
+=item C<$format>
+
+This is the format that L<Time::Piece/strptime> will be given.
+
+=back
+
+=cut
+
+method strptime ($c: $str, $format) {
+    my @p = _parse($str, $format, 'UTC');
+
+    bless {epoch => $p[0], tz => $p[1]}, $c;
+}
+
 fun _verify_tz ($tz) {
     _get_offset(time, $tz);
 }
