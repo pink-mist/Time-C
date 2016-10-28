@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.012     2016-10-28 06:00:23+02:00 Europe/Stockholm
   - Add ->strptime constructor in Time::C.
   - Add ->strftime method alias for ->string in Time::C.
   - Add ->second_of_day accessor in Time::C.
