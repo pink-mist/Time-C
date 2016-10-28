@@ -501,6 +501,14 @@ method string ($t: $format = undef, $new_str = undef) :lvalue {
     sentinel value => $str, set => $setter;
 }
 
+=head2 strftime
+
+Functions exactly like C<string>.
+
+=cut
+
+method strftime ($t: $format = undef, $new_str = undef) :lvalue { $t->string(@_); }
+
 =head2 year
 
   my $year = $t->year;
