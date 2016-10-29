@@ -226,10 +226,13 @@ my %parser; %parser = (
 
 );
 
-fun strptime ($str, $fmt, :$locale = 'C') {
+fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1) {
+    require Time::C;
+
     my $struct = {};
 
     my $re = _compile_fmt($fmt, locale => $locale);
+    $re = qr/^$re$/ if $strict;
 
     warn "fmt re: $re\n" if DEBUG;
 
@@ -261,7 +264,7 @@ fun _compile_fmt ($fmt, :$locale) {
         }
     }
 
-    return qr/^$re$/;
+    return $re;
 }
 
 sub _get_tok {
