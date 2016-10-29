@@ -240,7 +240,7 @@ fun _compile_fmt ($fmt, :$locale) {
         }
     }
 
-    return qr/$re/;
+    return qr/^$re$/;
 }
 
 sub _get_tok {
