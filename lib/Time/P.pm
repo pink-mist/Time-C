@@ -15,6 +15,9 @@ our %weekdays_abbr = ( C => [ qw/ Mon Tue Wed Thu Fri Sat Sun / ] );
 our %months = ( C => [ qw/ January February March April May June July August September October November December / ] );
 our %months_abbr = ( C => [ qw/ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec / ] );
 our %am_pm = ( C => [ qw/ a.m. p.m. / ] );
+our %datetime;
+our %date;
+our %time;
 our %locales;
 
 my %parser; %parser = (
@@ -56,6 +59,12 @@ my %parser; %parser = (
 #    %C - 2 digit century (eg 20)
 
     '%C' => fun () { "(?<C>[0-9][0-9])"; },
+
+#    #c - The date and time representation for the current locale.
+
+    '%c' => fun (:$locale) {
+        return $datetime{$locale} //= _build_locale(datetime => $locale);
+    },
 
 #    %D - equivalent to %m/%d/%y (eg 01/31/16)
 
@@ -116,6 +125,14 @@ my %parser; %parser = (
         my $re = _list2re(@am_pm);
         return "(?<p>$re)";
     },
+
+#    %X - The time, using the locale's time format
+
+    '%X' => fun (:$locale) { $time{$locale} //= _build_locale(time => $locale) },
+
+#    %x - The date, using the locale's date format
+
+    '%x' => fun (:$locale) { $date{$locale} //= _build_locale(date => $locale) },
 
 #    %R - equivalent to %H:%M (eg 22:05)
 
@@ -396,7 +413,136 @@ fun _build_locale ($type, $locale) {
         return $locales{$locale}->month_format_abbreviated;
     } elsif ($type eq 'am_pm') {
         return $locales{$locale}->am_pm_abbreviated;
+    } elsif ($type eq 'datetime') {
+        return _cldr_compile($locales{$locale}->datetime_format_full, $locale);
+    } elsif ($type eq 'date') {
+        return _cldr_compile($locales{$locale}->date_format_full, $locale);
+    } elsif ($type eq 'time') {
+        return _cldr_compile($locales{$locale}->time_format_full, $locale);
     } else { croak "Unknown locale type: $type."; }
+}
+
+my %cldr_translations = (
+    y => fun () { "(?<Y>[0-9]+)" },
+    yy => fun () { "(?<y>[0-9]+)" }, # note: <y> not <Y>
+    yyy => fun () { "(?<Y>[0-9]+)" },
+    yyyy => fun () { "(?<Y>[0-9]+)" },
+    yyyyy => fun () { "(?<Y>[0-9]+)" },
+    u => fun () { "(?<Y>[0-9]+)" },
+    uu => fun () { "(?<Y>[0-9]+)" },
+    uuu => fun () { "(?<Y>[0-9]+)" },
+    uuuu => fun () { "(?<Y>[0-9]+)" },
+    uuuuu => fun () { "(?<Y>[0-9]+)" },
+    Q => fun () { "[1-4]" },
+    QQ => fun () { "[1-4]" },
+    q => fun () { "[1-4]" },
+    qq => fun () { "[1-4]" },
+    M => fun () { $parser{'%m'}->(); },
+    MM => fun () { $parser{'%m'}->(); },
+    MMM => fun ($l) { $parser{'%b'}->(locale => $l); },
+    MMMM => fun ($l) { $parser{'%B'}->(locale => $l); },
+    L => fun () { $parser{'%m'}->(); },
+    LL => fun () { $parser{'%m'}->(); },
+    LLL => fun ($l) { $parser{'%b'}->(locale => $l); },
+    LLLL => fun ($l) { $parser{'%B'}->(locale => $l); },
+    W => fun () { $parser{'%V'}->(); },
+    d => fun () { $parser{'%e'}->(); },
+    dd => fun () { $parser{'%e'}->(); },
+    D => fun () { "(?<j>[0-9][0-9]?[0-9]?)" },
+    DD => fun () { "(?<j>[0-9][0-9][0-9]?)" },
+    DDD => fun () { "(?<j>[0-9][0-9][0-9])" },
+    E => fun ($l) { $parser{'%a'}->(locale => $l); },
+    EE => fun ($l) { $parser{'%a'}->(locale => $l); },
+    EEE => fun ($l) { $parser{'%a'}->(locale => $l); },
+    EEEE => fun ($l) { $parser{'%A'}->(locale => $l); },
+    eee => fun ($l) { $parser{'%a'}->(locale => $l); },
+    eeee => fun ($l) { $parser{'%A'}->(locale => $l); },
+    c => fun () { $parser{'%u'}->(); },
+    ccc => fun ($l) { $parser{'%a'}->(locale => $l); },
+    cccc => fun ($l) { $parser{'%A'}->(locale => $l); },
+    a => fun ($l) { $parser{'%p'}->(locale => $l); },
+    h => fun () { $parser{'%l'}->(); },
+    hh => fun () { $parser{'%l'}->(); },
+    H => fun () { $parser{'%k'}->(); },
+    HH => fun () { $parser{'%k'}->(); },
+    K => fun () { $parser{'%l'}->(); },
+    KK => fun () { $parser{'%l'}->(); },
+    k => fun () { $parser{'%k'}->(); },
+    kk => fun () { $parser{'%k'}->(); },
+    j => fun ($l) { $locales{$l}->prefers_24_hour_time ? $parser{'%k'}->() : $parser{'%l'}->(); },
+    jj => fun ($l) { $locales{$l}->prefers_24_hour_time ? $parser{'%k'}->() : $parser{'%l'}->(); },
+    m => fun { "(?<M>[0-9][0-9]?)"; },
+    mm => fun { $parser{'%M'}->(); },
+    s => fun { "(?<S>[0-9][0-9]?)"; },
+    ss => fun { $parser{'%S'}->(); },
+    z => fun { $parser{'%Z'}->(); },
+    zz => fun { $parser{'%Z'}->(); },
+    zzz => fun { $parser{'%Z'}->(); },
+    zzzz => fun { $parser{'%Z'}->(); },
+    Z => fun { $parser{'%z'}->(); },
+    ZZ => fun { $parser{'%z'}->(); },
+    ZZZ => fun { $parser{'%z'}->(); },
+    ZZZZ => fun { $parser{'%Z'}->() . $parser{'%z'}->(); },
+    ZZZZZ => fun { $parser{'%z'}->(); },
+    v => fun { $parser{'%Z'}->(); },
+    vv => fun { $parser{'%Z'}->(); },
+    vvv => fun { $parser{'%Z'}->(); },
+    vvvv => fun { $parser{'%Z'}->(); },
+    V => fun { $parser{'%Z'}->(); },
+    VV => fun { $parser{'%Z'}->(); },
+    VVV => fun { $parser{'%Z'}->(); },
+    VVVV => fun { $parser{'%Z'}->(); },
+);
+
+fun _cldr_compile ($cldr, $locale) {
+    my $re = "";
+
+    my $pos = 0;
+
+    warn "cldr: $cldr\n";
+
+    while (defined(my $tok = _cldr_tok($cldr, $pos))) {
+        if (ref $tok) {
+            $tok = $tok->[0];
+
+            if (exists $cldr_translations{$tok}) {
+                $re .= $cldr_translations{$tok}->($locale);
+            } else {
+                croak "Unknown or unsupported CLDR format: $tok.";
+            }
+        } else {
+            $re .= quotemeta $tok;
+        }
+    }
+
+    return qr/$re/;
+}
+
+fun _cldr_tok ($cldr, $pos) {
+
+    return undef if $pos >= length $cldr;
+
+    pos($cldr) = $pos;
+    if ($cldr =~ /\G(([GyYuQqMLwWdDFgEecahHKkjmsSAzZvV])\2*)/gc) {
+        my $tok = $1;
+        $_[1] += length $tok;
+        return [$tok];
+    } elsif ($cldr =~ /\G('[^']+')/gc) {
+        my $tok = $1;
+        while ($cldr =~ /\G('[^']+')/gc) { $tok .= $1; }
+        $_[1] += length $tok;
+        $tok =~ s/^'//;
+        $tok =~ s/'$//;
+        $tok =~ s/''/'/g;
+        return $tok;
+    } elsif ($cldr =~ /\G''/) {
+        $_[1] += 2;
+        return "'";
+    } else {
+        my $tok = substr $cldr, $pos, 1;
+        $_[1]++;
+        return $tok;
+    }
 }
 
 1;
