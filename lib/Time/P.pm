@@ -1,16 +1,21 @@
 package Time::P;
 
+use strict;
+use warnings;
+
 use Carp qw/ croak /;
 use Exporter qw/ import /;
-use Function::Parameters qw/ :strict /;
+use Function::Parameters;
+use DateTime::Locale;
 
 our @EXPORT = qw/ strptime /;
 
-our @weekdays = qw/ Monday Tuesday Wednesday Thursday Friday Saturday Sunday /;
-our @weekdays_abbr = qw/ Mon Tue Wed Thu Fri Sat Sun /;
-our @months = qw/ January February March April May June July August September October November December /;
-our @months_abbr = qw/ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec /;
-our @am_pm = qw/ a.m. p.m. /;
+our %weekdays = ( C => [ qw/ Monday Tuesday Wednesday Thursday Friday Saturday Sunday / ] );
+our %weekdays_abbr = ( C => [ qw/ Mon Tue Wed Thu Fri Sat Sun / ] );
+our %months = ( C => [ qw/ January February March April May June July August September October November December / ] );
+our %months_abbr = ( C => [ qw/ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec / ] );
+our %am_pm = ( C => [ qw/ a.m. p.m. / ] );
+our %locales;
 
 my %parser; %parser = (
 
@@ -18,28 +23,32 @@ my %parser; %parser = (
 #
 #    %A - national representation of the full weekday name (eg Monday)
 
-    '%A' => fun () {
+    '%A' => fun (:$locale) {
+        my @weekdays = @{ $weekdays{$locale} //= _build_locale(weekdays => $locale) };
         my $re = _list2re(@weekdays);
         return "(?<A>$re)";
     },
 
 #    %a - national representation of the abbreviated weekday name (eg Mon)
 
-    '%a' => fun () {
+    '%a' => fun (:$locale) {
+        my @weekdays_abbr = @{ $weekdays_abbr{$locale} //= _build_locale(weekdays_abbr => $locale) };
         my $re = _list2re(@weekdays_abbr);
         return "(?<a>$re)";
     },
 
 #    %B - national representation of the full month name (eg January)
 
-    '%B' => fun () {
+    '%B' => fun (:$locale) {
+        my @months = @{ $months{$locale} //= _build_locale(months => $locale) };
         my $re = _list2re(@months);
         return "(?<B>$re)";
     },
 
 #    %b - national representation of the abbreviated month name (eg Jan)
 
-    '%b' => fun () {
+    '%b' => fun (:$locale) {
+        my @months_abbr = @{ $months_abbr{$locale} //= _build_locale(months_abbr => $locale) };
         my $re = _list2re(@months_abbr);
         return "(?<b>$re)";
     },
@@ -70,7 +79,7 @@ my %parser; %parser = (
 
 #    %h - equivalent to %b (eg Jan)
 
-    '%h' => fun () { $parser{'%b'}->() },
+    '%h' => fun (:$locale) { $parser{'%b'}->(locale => $locale) },
 
 #    %I - 2 digit hour in 12-hour time (eg 11)
 
@@ -102,7 +111,8 @@ my %parser; %parser = (
 
 #    %p - national representation of a.m./p.m.
 
-    '%p' => fun () {
+    '%p' => fun (:$locale) {
+        my @am_pm = @{ $am_pm{$locale} //= _build_locale(am_pm => $locale) };
         my $re = _list2re(@am_pm);
         return "(?<p>$re)";
     },
@@ -113,7 +123,7 @@ my %parser; %parser = (
 
 #    %r - equivalent to %I:%M:%S %p (eg 10:05:00 p.m.)
 
-    '%r' => fun () { sprintf "(?<r>%s:%s:%s%s%s)", $parser{'%I'}->(), $parser{'%M'}->(), $parser{'%S'}->(), "\\s+", $parser{'%p'}->(); },
+    '%r' => fun (:$locale) { sprintf "(?<r>%s:%s:%s%s%s)", $parser{'%I'}->(), $parser{'%M'}->(), $parser{'%S'}->(), "\\s+", $parser{'%p'}->(locale => $locale); },
 
 #    %S - 2 digit second
 
@@ -145,7 +155,7 @@ my %parser; %parser = (
 
 #    %v - equivalent to %e-%b-%Y (eg 9-Jan-2016)
 
-    '%v' => fun () { sprintf "(?<v>%s-%s-%s)", $parser{'%e'}->(), $parser{'%b'}->(), $parser{'%Y'}->(); },
+    '%v' => fun (:$locale) { sprintf "(?<v>%s-%s-%s)", $parser{'%e'}->(), $parser{'%b'}->(locale => $locale), $parser{'%Y'}->(); },
 
 #    %W - 2 digit week number of the year Monday-based week (eg 00)
 
@@ -177,13 +187,10 @@ my %parser; %parser = (
 
 );
 
-sub strptime {
-    my ($str, $fmt) = @_;
-
-    my $s_pos = my $f_pos = 0;
+fun strptime ($str, $fmt, :$locale = 'C') {
     my $struct = {};
 
-    my $re = _compile_fmt($fmt);
+    my $re = _compile_fmt($fmt, locale => $locale);
 
     warn "fmt re: $re\n";
 
@@ -193,14 +200,14 @@ sub strptime {
         croak sprintf "Could not match '%s' using '%s'.", $str, $fmt;
     }
 
-    my ($time, $err) = _mktime($struct);
+    my ($time, $err) = _mktime($struct, locale => $locale);
     croak sprintf "Could not match %s using %s. Invalid time specification: %s.", $str, $fmt, $err
       if defined $err;
 
     return $time;
 }
 
-fun _compile_fmt ($fmt) {
+fun _compile_fmt ($fmt, :$locale) {
     my $re = "";
 
     my $pos = 0;
@@ -208,7 +215,7 @@ fun _compile_fmt ($fmt) {
     # _get_tok will increment $pos for us
     while (defined(my $tok = _get_tok($fmt, $pos))) {
         if (exists $parser{$tok}) {
-            $re .= $parser{$tok}->();
+            $re .= $parser{$tok}->(locale => $locale);
         } else {
             $re .= quotemeta $tok;
         }
@@ -233,7 +240,7 @@ sub _list2re {
     join '|', map quotemeta, @_;
 }
 
-fun _mktime ($struct) {
+fun _mktime ($struct, :$locale) {
     require Time::C;
 
     # First, if we know the epoch, great
@@ -260,9 +267,9 @@ fun _mktime ($struct) {
     my $month = $struct->{'m'};
     if (not defined $month) {
         if (defined $struct->{'B'}) {
-            $month = _get_index($struct->{'B'}, @months) + 1;
+            $month = _get_index($struct->{'B'}, @{ $months{$locale} }) + 1;
         } elsif (defined $struct->{'b'}) {
-            $month = _get_index($struct->{'b'}, @months_abbr) + 1;
+            $month = _get_index($struct->{'b'}, @{ $months_abbr{$locale} }) + 1;
         } 
     }
 
@@ -279,9 +286,9 @@ fun _mktime ($struct) {
     }
     if (not defined $wday) {
         if (defined $struct->{'A'}) {
-            $wday = _get_index($struct->{'A'}, @weekdays) + 1;
+            $wday = _get_index($struct->{'A'}, @{ $weekdays{$locale} }) + 1;
         } elsif (defined $struct->{'a'}) {
-            $wday = _get_index($struct->{'a'}, @weekdays_abbr) + 1;
+            $wday = _get_index($struct->{'a'}, @{ $weekdays_abbr{$locale} }) + 1;
         }
     }
 
@@ -296,7 +303,7 @@ fun _mktime ($struct) {
     if (not defined $hour) {
         $hour = $struct->{'I'} // $struct->{'l'};
         if (defined $hour and defined $struct->{'p'}) {
-            $hour = _get_index($struct->{'p'}, @am_pm) ? $hour + 12 : $hour;
+            $hour = _get_index($struct->{'p'}, @{ $am_pm{$locale} }) ? $hour + 12 : $hour;
         }
     }
 
@@ -367,6 +374,29 @@ fun _mktime ($struct) {
 fun _offset_to_minutes ($offset) {
     my ($sign, $hours, $minutes) = $offset =~ m/^([+-])([0-9][0-9]):?([0-9][0-9])?$/;
     return $sign eq '+' ? ($hours * 60 + $minutes) : -($hours * 60 + $minutes);
+}
+
+fun _get_index ($needle, @haystack) {
+    foreach my $i (0 .. $#haystack) {
+        return $i if $haystack[$i] eq $needle;
+    }
+    croak "Could not find $needle in the list.";
+}
+
+fun _build_locale ($type, $locale) {
+    $locales{$locale} //= DateTime::Locale->load($locale);
+
+    if ($type eq 'weekdays') {
+        return $locales{$locale}->day_format_wide;
+    } elsif ($type eq 'weekdays_abbr') {
+        return $locales{$locale}->day_format_abbreviated;
+    } elsif ($type eq 'months') {
+        return $locales{$locale}->month_format_wide;
+    } elsif ($type eq 'months_abbr') {
+        return $locales{$locale}->month_format_abbreviated;
+    } elsif ($type eq 'am_pm') {
+        return $locales{$locale}->am_pm_abbreviated;
+    } else { croak "Unknown locale type: $type."; }
 }
 
 1;
