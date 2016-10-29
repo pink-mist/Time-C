@@ -8,6 +8,8 @@ use Exporter qw/ import /;
 use Function::Parameters;
 use DateTime::Locale;
 
+use constant DEBUG => 0;
+
 our @EXPORT = qw/ strptime /;
 
 our %weekdays = ( C => [ qw/ Monday Tuesday Wednesday Thursday Friday Saturday Sunday / ] );
@@ -209,7 +211,7 @@ fun strptime ($str, $fmt, :$locale = 'C') {
 
     my $re = _compile_fmt($fmt, locale => $locale);
 
-    warn "fmt re: $re\n";
+    warn "fmt re: $re\n" if DEBUG;
 
     if ($str =~ $re) {
         %$struct = %+;
@@ -499,7 +501,7 @@ fun _cldr_compile ($cldr, $locale) {
 
     my $pos = 0;
 
-    warn "cldr: $cldr\n";
+    warn "cldr: $cldr\n" if DEBUG;
 
     while (defined(my $tok = _cldr_tok($cldr, $pos))) {
         if (ref $tok) {
