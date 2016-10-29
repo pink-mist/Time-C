@@ -242,9 +242,9 @@ fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1) {
         croak sprintf "Could not match '%s' using '%s'.", $str, $fmt;
     }
 
-    my ($time, $err) = _mktime($struct, locale => $locale);
-    croak sprintf "Could not match %s using %s. Invalid time specification: %s.", $str, $fmt, $err
-      if defined $err;
+    my ($sec, $min, $hour, $mday, $month, $year, $wday, $week, $yday, $epoch, $tz, $offset)
+      = _parse_struct($struct, $locale);
+    my $time = mktime($sec, $min, $hour, $mday, $month, $year, $wday, $week, $yday, $epoch, $tz, $offset);
 
     return $time;
 }
@@ -284,9 +284,7 @@ sub _list2re {
     qr"$re";
 }
 
-fun _mktime ($struct, :$locale) {
-    require Time::C;
-
+fun _parse_struct ($struct, :$locale) {
     # First, if we know the epoch, great
     my $epoch = $struct->{'s'};
 
@@ -363,6 +361,11 @@ fun _mktime ($struct, :$locale) {
 
     my $offset_n = defined $offset ? _offset_to_minutes($offset) : undef;
 
+    return ($sec, $min, $hour, $mday, $month, $year, $wday, $m_week, $yday, $epoch, $tz, $offset_n);
+}
+
+fun mktime ($sec, $min, $hour, $mday, $month, $year, $wday, $m_week, $yday, $epoch, $tz, $offset) {
+
     # Alright, time to try and construct a Time::C object with what we have
     # We'll start with the easiest one: epoch
     # Then go on to creating it from the date bits, and the time bits
@@ -374,8 +377,8 @@ fun _mktime ($struct, :$locale) {
 
         if (defined $tz) {
             $t->tz = $tz;
-        } elsif (defined $offset_n) {
-            $t->offset = $offset_n;
+        } elsif (defined $offset) {
+            $t->offset = $offset;
         }
 
         return $t;
@@ -400,16 +403,43 @@ fun _mktime ($struct, :$locale) {
         if (defined $min) { $t->minute = $min; }
         if (defined $sec) { $t->second = $sec; }
     } else {
-        croak 'Could not mktime: no year or epoch specified.';
+        # If we don't have a year, let's use the current year
+        $year = Time::C->now($tz)->tz('UTC', 1)->year;
+        if (defined $month) {
+            if (defined $mday) {
+                $t = Time::C->new($year, $month, $mday);
+            } else {
+                $t = Time::C->new($year, $month);
+            }
+        } elsif (defined $m_week) {
+            $t = Time::C->new($year)->week($m_week);
+            if (defined $wday) { $t->day_of_week = $wday; }
+        } elsif (defined $yday) {
+            $t = Time::C->new($year)->day($yday);
+        } else {
+            # We have neither year, month, week, or day of year ...
+            # So let's just make a time for today's date
+            $t = Time::C->now($tz)->second_of_day(0)->tz('UTC', 1);
+
+            croak "Could not mktime: No date specified and no time given."
+              if not defined $hour and not defined $min and not defined $sec;
+
+            # And add the time bits on top...
+            # - if hour not defined, use current hour
+            # - if hour and minute not defined, use current minute
+            if (defined $hour) { $t->hour = $hour; } else { $t->hour = Time::C->now($tz)->tz('UTC', 1)->hour; }
+            if (defined $min) { $t->minute = $min; } elsif (not defined $hour) { $t->second_of_day = Time::C->now($tz)->tz('UTC', 1)->second(0)->second_of_day; }
+            if (defined $sec) { $t->second = $sec; }
+        }
     }
 
     # And last, adjust for timezone bits
 
     if (defined $tz) {
         $t = $t->tz($tz, 1);
-    } elsif (defined $offset_n) {
-        $t->tm = $t->tm->with_offset_same_local($offset_n);
-        $t->offset = $offset_n;
+    } elsif (defined $offset) {
+        $t->tm = $t->tm->with_offset_same_local($offset);
+        $t->offset = $offset;
     }
 
     return $t;
