@@ -31,7 +31,7 @@ my %parser; %parser = (
     '%A' => fun (:$locale) {
         my @weekdays = @{ $weekdays{$locale} //= _build_locale(weekdays => $locale) };
         my $re = _list2re(@weekdays);
-        return "(?<A>$re)";
+        return qr"(?<A>$re)";
     },
 
 #    %a - national representation of the abbreviated weekday name (eg Mon)
@@ -39,7 +39,7 @@ my %parser; %parser = (
     '%a' => fun (:$locale) {
         my @weekdays_abbr = @{ $weekdays_abbr{$locale} //= _build_locale(weekdays_abbr => $locale) };
         my $re = _list2re(@weekdays_abbr);
-        return "(?<a>$re)";
+        return qr"(?<a>$re)";
     },
 
 #    %B - national representation of the full month name (eg January)
@@ -47,7 +47,7 @@ my %parser; %parser = (
     '%B' => fun (:$locale) {
         my @months = @{ $months{$locale} //= _build_locale(months => $locale) };
         my $re = _list2re(@months);
-        return "(?<B>$re)";
+        return qr"(?<B>$re)";
     },
 
 #    %b - national representation of the abbreviated month name (eg Jan)
@@ -55,12 +55,12 @@ my %parser; %parser = (
     '%b' => fun (:$locale) {
         my @months_abbr = @{ $months_abbr{$locale} //= _build_locale(months_abbr => $locale) };
         my $re = _list2re(@months_abbr);
-        return "(?<b>$re)";
+        return qr"(?<b>$re)";
     },
 
 #    %C - 2 digit century (eg 20)
 
-    '%C' => fun () { "(?<C>[0-9][0-9])"; },
+    '%C' => fun () { qr"(?<C>[0-9][0-9])"; },
 
 #    #c - The date and time representation for the current locale.
 
@@ -70,23 +70,29 @@ my %parser; %parser = (
 
 #    %D - equivalent to %m/%d/%y (eg 01/31/16)
 
-    '%D' => fun () { sprintf "(?<D>%s/%s/%s)", $parser{'%m'}->(), $parser{'%d'}->(), $parser{'%y'}->(); },
+    '%D' => fun () {
+        my $re = sprintf "(?<D>%s/%s/%s)", $parser{'%m'}->(), $parser{'%d'}->(), $parser{'%y'}->();
+        return qr"$re";
+    },
 
 #    %d - 2 digit day of month (eg 30)
 
-    '%d' => fun () { "(?<d>[0-9][0-9])"; },
+    '%d' => fun () { qr"(?<d>[0-9][0-9])"; },
 
 #    %e - 1/2 digit day of month (eg 9)
 
-    '%e' => fun () { "(?<e>[0-9][0-9]?)"; },
+    '%e' => fun () { qr"(?<e>[0-9][0-9]?)"; },
 
 #    %F - equivalent to %Y-%m-%d (eg 2016-01-31)
 
-    '%F' => fun () { sprintf "(?<F>%s-%s-%s)", $parser{'%Y'}->(), $parser{'%m'}->(), $parser{'%d'}->(); },
+    '%F' => fun () {
+        my $re = sprintf "(?<F>%s-%s-%s)", $parser{'%Y'}->(), $parser{'%m'}->(), $parser{'%d'}->();
+        return qr"$re";
+    },
 
 #    %H - 2 digit hour in 24-hour time (eg 23)
 
-    '%H' => fun () { "(?<H>[0-9][0-9])"; },
+    '%H' => fun () { qr"(?<H>[0-9][0-9])"; },
 
 #    %h - equivalent to %b (eg Jan)
 
@@ -94,38 +100,38 @@ my %parser; %parser = (
 
 #    %I - 2 digit hour in 12-hour time (eg 11)
 
-    '%I' => fun () { "(?<I>[0-9][0-9])"; },
+    '%I' => fun () { qr"(?<I>[0-9][0-9])"; },
 
 #    %j - 3 digit day of the year (eg 001)
 
-    '%j' => fun () { "(?<j>[0-9][0-9][0-9])"; },
+    '%j' => fun () { qr"(?<j>[0-9][0-9][0-9])"; },
 
 #    %k - 1/2 digit hour in 24-hour time (eg 9)
 
-    '%k' => fun () { "(?<k>[0-9][0-9]?)"; },
+    '%k' => fun () { qr"(?<k>[0-9][0-9]?)"; },
 
 #    %l - 1/2 digit hour in 12-hour time (eg 9)
 
-    '%l' => fun () { "(?<l>[0-9][0-9]?)"; },
+    '%l' => fun () { qr"(?<l>[0-9][0-9]?)"; },
 
 #    %M - 2 digit minute (eg 45)
 
-    '%M' => fun () { "(?<M>[0-9][0-9])"; },
+    '%M' => fun () { qr"(?<M>[0-9][0-9])"; },
 
 #    %m - 2 digit month (eg 12)
 
-    '%m' => fun () { "(?<m>[0-9][0-9])"; },
+    '%m' => fun () { qr"(?<m>[0-9][0-9])"; },
 
 #    %n - newline - arbitrary whitespace
 
-    '%n' => fun () { "\\s+"; },
+    '%n' => fun () { qr"\s+"; },
 
 #    %p - national representation of a.m./p.m.
 
     '%p' => fun (:$locale) {
         my @am_pm = @{ $am_pm{$locale} //= _build_locale(am_pm => $locale) };
         my $re = _list2re(@am_pm);
-        return "(?<p>$re)";
+        return qr"(?<p>$re)";
     },
 
 #    %X - The time, using the locale's time format
@@ -138,71 +144,83 @@ my %parser; %parser = (
 
 #    %R - equivalent to %H:%M (eg 22:05)
 
-    '%R' => fun () { sprintf "(?<R>%s:%s)", $parser{'%H'}->(), $parser{'%M'}->(); },
+    '%R' => fun () {
+        my $re = sprintf "(?<R>%s:%s)", $parser{'%H'}->(), $parser{'%M'}->();
+        return qr"$re";
+    },
 
 #    %r - equivalent to %I:%M:%S %p (eg 10:05:00 p.m.)
 
-    '%r' => fun (:$locale) { sprintf "(?<r>%s:%s:%s%s%s)", $parser{'%I'}->(), $parser{'%M'}->(), $parser{'%S'}->(), "\\s+", $parser{'%p'}->(locale => $locale); },
+    '%r' => fun (:$locale) {
+        my $re = sprintf "(?<r>%s:%s:%s%s%s)", $parser{'%I'}->(), $parser{'%M'}->(), $parser{'%S'}->(), "\\s+", $parser{'%p'}->(locale => $locale);
+        return qr"$re";
+    },
 
 #    %S - 2 digit second
 
-    '%S' => fun () { "(?<S>[0-9][0-9])"; },
+    '%S' => fun () { qr"(?<S>[0-9][0-9])"; },
 
 #    %s - 1/2/3/4/5/... digit seconds since epoch (eg 1477629064)
 
-    '%s' => fun () { "(?<s>[0-9]+)"; },
+    '%s' => fun () { qr"(?<s>[0-9]+)"; },
 
 #    %T - equivalent to %H:%M:%S
 
-    '%T' => fun () { sprintf "(?<T>%s:%s:%s)", $parser{'%H'}->(), $parser{'%M'}->(), $parser{'%S'}->(); },
+    '%T' => fun () {
+        my $re = sprintf "(?<T>%s:%s:%s)", $parser{'%H'}->(), $parser{'%M'}->(), $parser{'%S'}->();
+        return qr"$re";
+    },
 
 #    %t - tab - arbitrary whitespace
 
-    '%t' => fun () { "\\s+"; },
+    '%t' => fun () { qr"\s+"; },
 
 #    %U - 2 digit week number of the year Sunday-based week (eg 00)
 
-    '%U' => fun () { "(?<U>[0-9][0-9])"; },
+    '%U' => fun () { qr"(?<U>[0-9][0-9])"; },
 
 #    %u - 1 digit weekday Monday-based week (eg 1)
 
-    '%u' => fun () { "(?<u>[0-9])"; },
+    '%u' => fun () { qr"(?<u>[0-9])"; },
 
 #    %V - 2 digit week number of the year Monday-based week (eg 01)
 
-    '%V' => fun () { "(?<V>[0-9][0-9])"; },
+    '%V' => fun () { qr"(?<V>[0-9][0-9])"; },
 
 #    %v - equivalent to %e-%b-%Y (eg 9-Jan-2016)
 
-    '%v' => fun (:$locale) { sprintf "(?<v>%s-%s-%s)", $parser{'%e'}->(), $parser{'%b'}->(locale => $locale), $parser{'%Y'}->(); },
+    '%v' => fun (:$locale) {
+        my $re = sprintf "(?<v>%s-%s-%s)", $parser{'%e'}->(), $parser{'%b'}->(locale => $locale), $parser{'%Y'}->();
+        return qr"$re";
+    },
 
 #    %W - 2 digit week number of the year Monday-based week (eg 00)
 
-    '%W' => fun () { "(?<W>[0-9][0-9])"; },
+    '%W' => fun () { qr"(?<W>[0-9][0-9])"; },
 
 #    %w - 1 digit weekday Sunday-based week (eg 0)
 
-    '%w' => fun () { "(?<w>[0-9])"; },
+    '%w' => fun () { qr"(?<w>[0-9])"; },
 
 #    %Y - 1/2/3/4 digit year including century (eg 2016)
 
-    '%Y' => fun () { "(?<Y>[0-9]{1,4})"; },
+    '%Y' => fun () { qr"(?<Y>[0-9]{1,4})"; },
 
 #    %y - 2 digit year without century (eg 99)
 
-    '%y' => fun () { "(?<y>[0-9][0-9])"; },
+    '%y' => fun () { qr"(?<y>[0-9][0-9])"; },
 
 #    %Z - time zone name (eg CET)
 
-    '%Z' => fun () { "(?<Z>\\S+)"; },
+    '%Z' => fun () { qr"(?<Z>\S+)"; },
 
 #    %z - time zone offset from UTC (eg +0100)
 
-    '%z' => fun () { "(?<z>[-+][0-9][0-9](?::?[0-9][0-9])?)"; },
+    '%z' => fun () { qr"(?<z>[-+][0-9][0-9](?::?[0-9][0-9])?)"; },
 
 #    %% - percent sign
 
-    '%%' => fun () { "%"; },
+    '%%' => fun () { qr"%"; },
 
 );
 
@@ -227,16 +245,17 @@ fun strptime ($str, $fmt, :$locale = 'C') {
 }
 
 fun _compile_fmt ($fmt, :$locale) {
-    my $re = "";
+    my $re = qr//;
 
     my $pos = 0;
 
     # _get_tok will increment $pos for us
     while (defined(my $tok = _get_tok($fmt, $pos))) {
         if (exists $parser{$tok}) {
-            $re .= $parser{$tok}->(locale => $locale);
+            my $qr = $parser{$tok}->(locale => $locale);
+            $re = qr/$re$qr/;
         } else {
-            $re .= quotemeta $tok;
+            $re = qr/$re\Q$tok\E/;
         }
     }
 
@@ -256,7 +275,8 @@ sub _get_tok {
 }
 
 sub _list2re {
-    join '|', map quotemeta, @_;
+    my $re = join '|', map quotemeta, @_;
+    qr"$re";
 }
 
 fun _mktime ($struct, :$locale) {
