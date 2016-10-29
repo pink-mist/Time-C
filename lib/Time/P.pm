@@ -165,7 +165,7 @@ my %parser; %parser = (
 
 #    %Z - time zone name (eg CET)
 
-    '%Z' => fun () { "(?<Z>\S+)"; },
+    '%Z' => fun () { "(?<Z>\\S+)"; },
 
 #    %z - time zone offset from UTC (eg +0100)
 
