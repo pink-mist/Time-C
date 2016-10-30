@@ -110,6 +110,177 @@ method new ($c: $year = undef, $month = 1, $day = 1, $hour = 0, $minute = 0, $se
     $c->localtime($tm->epoch, $tz);
 }
 
+=head2 mktime
+
+  my $t = Time::C->mktime(
+    epoch => epoch,
+    second => $second,
+    minute => $minute,
+    hour => $hour,
+    mday => $mday,
+    month => $month,
+    wday => $wday,
+    week => $week,
+    yday => $yday,
+    year => $year,
+    tz => $tz,
+    offset => $offset,
+  );
+
+Creates a Time::C object for the specified arguments. All the arguments are optional, as long as there is at least one way to specify some kind of time with them.
+
+If there is no date specified, it will default to today's date. If there is no timezone or offset specified, it will default to UTC. If there is a date, but no time specified, it will default to midnight.
+
+=over
+
+=item C<< epoch => $epoch >>
+
+If the C<$epoch> is specified, it overrides all the other options but C<$tz> and C<$offset>, and this basically becomes a call to C<< Time::C->gmtime($epoch); >>, applying the C<$tz> or C<$offset> afterwards.
+
+=item C<< second => $second >>
+
+C<$second> sets the second of the day/hour/minute, depending on what other options were specified.
+
+=item C<< minute => $minute >>
+
+C<$minute> sets the minute of the day/hour, depending on what other options were specified.
+
+=item C<< hour => $hour >>
+
+C<$hout> sets the hour of the day.
+
+=item C<< mday => $mday >>
+
+C<$mday> sets the day of the month, if a C<$month> was specified.
+
+=item C<< month => $month >>
+
+C<$month> sets the month of the year. If no C<$mday> is specified, it will default to the C<1st> day of the month.
+
+=item C<< wday => $wday >>
+
+C<$wday> sets the day of the week, if a C<$week> was specified and no C<$month> was specified.
+
+=item C<< week => $week >>
+
+C<$week> sets the week of the year if no C<$month> was specified. If no C<$wday> was specified, it will default to the C<1st> day of the week, i.e. C<Monday>. 
+
+=item C<< yday => $yday >>
+
+C<$yday> sets the day of the year if neither C<$month> or C<$week> was specified.
+
+=item C<< year => $year >>
+
+C<$year> specifies the year, and if no C<$month>, C<$week>, or C<$yday> is specified, the day will default to C<January 1st>.
+
+=item C<< tz => $tz >>
+
+C<$tz> specifies the timezone, and will default to C<UTC> if neither C<$tz> or C<$offset> is given.
+
+=item C<< offset => $offset >>
+
+C<$offset> specifies the offset from C<UTC> in minutes, and will default to C<0> if neither C<$tz> nor C<$offset> are given.
+
+=back
+
+=cut
+
+method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$month =, :$wday =, :$week =, :$yday =, :$year =, :$tz =, :$offset =) {
+
+    # Alright, time to try and construct a Time::C object with what we have
+    # We'll start with the easiest one: epoch
+    # Then go on to creating it from the date bits, and the time bits
+
+    my $t;
+
+    if (defined $epoch) {
+        $t = Time::C->gmtime($epoch);
+
+        if (defined $tz) {
+            $t->tz = $tz;
+        } elsif (defined $offset) {
+            $t->offset = $offset;
+        }
+
+        return $t;
+    } elsif (defined $year) { # We have a year at least...
+        if (defined $month) {
+            if (defined $mday) {
+                $t = Time::C->new($year, $month, $mday);
+            } else {
+                $t = Time::C->new($year, $month);
+            }
+        } elsif (defined $week) {
+            $t = Time::C->new($year)->week($week)->day_of_week(1);
+            if (defined $wday) { $t->day_of_week = $wday; }
+        } elsif (defined $yday) {
+            $t = Time::C->new($year)->day($yday);
+        } else { # we have neither month, week, or day of year!
+            $t = Time::C->new($year);
+        }
+
+        # Now add the time bits on top...
+        if (defined $hour) { $t->hour = $hour; }
+        if (defined $minute) { $t->minute = $minute; }
+        if (defined $second) { $t->second = $second; }
+    } else {
+        # If we don't have a year, let's use the current year
+        $year = Time::C->now($tz)->tz('UTC', 1)->year;
+        if (defined $month) {
+            if (defined $mday) {
+                $t = Time::C->new($year, $month, $mday);
+            } else {
+                $t = Time::C->new($year, $month);
+            }
+
+            # Now add the time bits on top...
+            if (defined $hour) { $t->hour = $hour; }
+            if (defined $minute) { $t->minute = $minute; }
+            if (defined $second) { $t->second = $second; }
+        } elsif (defined $week) {
+            $t = Time::C->new($year)->week($week)->day_of_week(1);
+            if (defined $wday) { $t->day_of_week = $wday; }
+
+            # Now add the time bits on top...
+            if (defined $hour) { $t->hour = $hour; }
+            if (defined $minute) { $t->minute = $minute; }
+            if (defined $second) { $t->second = $second; }
+        } elsif (defined $yday) {
+            $t = Time::C->new($year)->day($yday);
+
+            # Now add the time bits on top...
+            if (defined $hour) { $t->hour = $hour; }
+            if (defined $minute) { $t->minute = $minute; }
+            if (defined $second) { $t->second = $second; }
+        } else {
+            # We have neither year, month, week, or day of year ...
+            # So let's just make a time for today's date
+            $t = Time::C->now($tz)->second_of_day(0)->tz('UTC', 1);
+
+            croak "Could not mktime: No date specified and no time given."
+              if not defined $hour and not defined $minute and not defined $second;
+
+            # And add the time bits on top...
+            # - if hour not defined, use current hour
+            # - if hour and minute not defined, use current minute
+            if (defined $hour) { $t->hour = $hour; } else { $t->hour = Time::C->now($tz)->tz('UTC', 1)->hour; }
+            if (defined $minute) { $t->minute = $minute; } elsif (not defined $hour) { $t->second_of_day = Time::C->now($tz)->tz('UTC', 1)->second(0)->second_of_day; }
+            if (defined $second) { $t->second = $second; }
+        }
+    }
+
+    # And last, adjust for timezone bits
+
+    if (defined $tz) {
+        $t = $t->tz($tz, 1);
+    } elsif (defined $offset) {
+        $t->tm = $t->tm->with_offset_same_local($offset);
+        $t->offset = $offset;
+    }
+
+    return $t;
+}
+
 =head2 localtime
 
   my $t = Time::C->localtime($epoch);
