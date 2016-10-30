@@ -7,7 +7,7 @@ use Carp qw/ croak /;
 use Exporter qw/ import /;
 use Function::Parameters;
 use DateTime::Locale;
-use File::ShareDir qw/ dist_file /;
+use File::Share qw/ dist_file /;
 
 use constant DEBUG => 0;
 
