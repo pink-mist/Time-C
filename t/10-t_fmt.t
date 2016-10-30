@@ -3,9 +3,12 @@
 use strict;
 use warnings;
 
+use Test::More;
+
+if (not $ENV{RELEASE_TESTING}) { plan skip_all => 'Release test should only be run on release.'; }
+
 use Encode qw/ decode encode /;
 use File::Share qw/ dist_file /;
-use Test::More;
 use Carp::Always;
 use JSON::MaybeXS qw/ decode_json /;
 use Data::Munge qw/ slurp /;
