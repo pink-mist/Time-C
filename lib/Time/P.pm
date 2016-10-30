@@ -63,8 +63,7 @@ my %parser; %parser = (
 #    %D - equivalent to %m/%d/%y (eg 01/31/16)
 
     '%D' => fun () {
-        my $re = sprintf "(?<D>%s/%s/%s)", $parser{'%m'}->(), $parser{'%d'}->(), $parser{'%y'}->();
-        return qr"$re";
+        return $parser{'%m'}->(), qr!/!, $parser{'%d'}->(), qr!/!, $parser{'%y'}->();
     },
 
 #    %d - 2 digit day of month (eg 30)
@@ -73,13 +72,12 @@ my %parser; %parser = (
 
 #    %e - 1/2 digit day of month (eg 9)
 
-    '%e' => fun () { qr"(?<e>[0-9][0-9]?)"; },
+    '%e' => fun () { qr"\s?(?<e>[0-9][0-9]?)"; },
 
 #    %F - equivalent to %Y-%m-%d (eg 2016-01-31)
 
     '%F' => fun () {
-        my $re = sprintf "(?<F>%s-%s-%s)", $parser{'%Y'}->(), $parser{'%m'}->(), $parser{'%d'}->();
-        return qr"$re";
+        return $parser{'%Y'}->(), qr/-/, $parser{'%m'}->(), qr/-/, $parser{'%d'}->();
     },
 
 #    %H - 2 digit hour in 24-hour time (eg 23)
@@ -100,11 +98,11 @@ my %parser; %parser = (
 
 #    %k - 1/2 digit hour in 24-hour time (eg 9)
 
-    '%k' => fun () { qr"(?<k>[0-9][0-9]?)"; },
+    '%k' => fun () { qr"\s?(?<k>[0-9][0-9]?)"; },
 
 #    %l - 1/2 digit hour in 12-hour time (eg 9)
 
-    '%l' => fun () { qr"(?<l>[0-9][0-9]?)"; },
+    '%l' => fun () { qr"\s?(?<l>[0-9][0-9]?)"; },
 
 #    %M - 2 digit minute (eg 45)
 
@@ -138,8 +136,7 @@ my %parser; %parser = (
 #    %R - equivalent to %H:%M (eg 22:05)
 
     '%R' => fun () {
-        my $re = sprintf "(?<R>%s:%s)", $parser{'%H'}->(), $parser{'%M'}->();
-        return qr"$re";
+        return $parser{'%H'}->(), qr/:/, $parser{'%M'}->();
     },
 
 #    %r - equivalent to %I:%M:%S %p in POSIX - not in other locales (eg 10:05:00 p.m.)
@@ -152,13 +149,12 @@ my %parser; %parser = (
 
 #    %s - 1/2/3/4/5/... digit seconds since epoch (eg 1477629064)
 
-    '%s' => fun () { qr"(?<s>[0-9]+)"; },
+    '%s' => fun () { qr"\s*(?<s>[0-9]+)"; },
 
 #    %T - equivalent to %H:%M:%S
 
     '%T' => fun () {
-        my $re = sprintf "(?<T>%s:%s:%s)", $parser{'%H'}->(), $parser{'%M'}->(), $parser{'%S'}->();
-        return qr"$re";
+        return $parser{'%H'}->(), qr/:/, $parser{'%M'}->(), qr/:/, $parser{'%S'}->();
     },
 
 #    %t - tab - arbitrary whitespace
@@ -180,8 +176,7 @@ my %parser; %parser = (
 #    %v - equivalent to %e-%b-%Y (eg 9-Jan-2016)
 
     '%v' => fun (:$locale) {
-        my $re = sprintf "(?<v>%s-%s-%s)", $parser{'%e'}->(), $parser{'%b'}->(locale => $locale), $parser{'%Y'}->();
-        return qr"$re";
+        return $parser{'%e'}->(), qr/-/, $parser{'%b'}->(locale => $locale), qr/-/, $parser{'%Y'}->()
     },
 
 #    %W - 2 digit week number of the year Monday-based week (eg 00)
@@ -217,42 +212,44 @@ my %parser; %parser = (
 fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1) {
     require Time::C;
 
-    my $struct = {};
+    my %struct = ();
 
-    my $re = _compile_fmt($fmt, locale => $locale);
-    $re = qr/^$re$/ if $strict;
+    my @res = _compile_fmt($fmt, locale => $locale);
+    @res = (qr/^/, @res, qr/$/) if $strict;
 
-    warn "fmt re: $re\n" if DEBUG;
+    while (@res and $str =~ m/\G$res[0]/gc) {
+        %struct = (%struct, %+);
+        shift @res;
+    }
 
-    if ($str =~ $re) {
-        %$struct = %+;
-    } else {
-        croak sprintf "Could not match '%s' using '%s'.", $str, $fmt;
+    if (@res) {
+        croak sprintf "Could not match '%s' using '%s'. Match failed at position %d.", $str, $fmt, pos($str);
     }
 
     my ($sec, $min, $hour, $mday, $month, $year, $wday, $week, $yday, $epoch, $tz, $offset)
-      = _parse_struct($struct, locale => $locale);
+      = _parse_struct(\%struct, locale => $locale);
     my $time = mktime($sec, $min, $hour, $mday, $month, $year, $wday, $week, $yday, $epoch, $tz, $offset);
 
     return $time;
 }
 
 fun _compile_fmt ($fmt, :$locale) {
-    my $re = qr//;
+    my @res = ();
 
     my $pos = 0;
 
     # _get_tok will increment $pos for us
     while (defined(my $tok = _get_tok($fmt, $pos))) {
         if (exists $parser{$tok}) {
-            my $qr = $parser{$tok}->(locale => $locale);
-            $re = qr/$re$qr/;
+            push @res, $parser{$tok}->(locale => $locale);
+        } elsif ($tok =~ /^%/) {
+            croak "Unsupported format specifier: $tok";
         } else {
-            $re = qr/$re\Q$tok\E/;
+            push @res, qr/\Q$tok\E/;
         }
     }
 
-    return $re;
+    return @res;
 }
 
 sub _get_tok {
@@ -263,6 +260,14 @@ sub _get_tok {
     my $tok_len = substr($fmt, $pos, 1) eq '%' ? 2 : 1;
 
     my $tok = substr $fmt, $pos, $tok_len;
+
+    while ($tok eq '%-') {
+        $tok = '%' . substr($fmt, $pos + $tok_len, 1); $tok_len++;
+    }
+    if (($tok eq '%O') or ($tok eq '%E')) {
+        $tok .= substr($fmt, $pos + $tok_len, 1); $tok_len++;
+    }
+
     $_[1] = $pos + $tok_len;
     return $tok;
 }
