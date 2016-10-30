@@ -243,7 +243,7 @@ fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1) {
     }
 
     my ($sec, $min, $hour, $mday, $month, $year, $wday, $week, $yday, $epoch, $tz, $offset)
-      = _parse_struct($struct, $locale);
+      = _parse_struct($struct, locale => $locale);
     my $time = mktime($sec, $min, $hour, $mday, $month, $year, $wday, $week, $yday, $epoch, $tz, $offset);
 
     return $time;
