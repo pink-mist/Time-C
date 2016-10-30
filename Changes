@@ -1,4 +1,8 @@
 {{$NEXT}}
+  - Add Time::P, implementing our own strptime().
+  - Add ->mktime constructor in Time::C.
+  - Change ->from_string, ->strptime, ->string in Time::C to make use of
+    Time::P::strptime.
 
 0.012     2016-10-28 06:00:23+02:00 Europe/Stockholm
   - Add ->strptime constructor in Time::C.
