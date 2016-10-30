@@ -1,7 +1,8 @@
-package Time::P;
-
 use strict;
 use warnings;
+package Time::P;
+
+# ABSTRACT: Parse times from strings.
 
 use Carp qw/ croak /;
 use Exporter qw/ import /;
@@ -14,200 +15,124 @@ use constant DEBUG => 0;
 
 our @EXPORT = qw/ strptime /;
 
+=head1 SYNOPSIS
+
+  use Time::P; # strptime() automatically exported.
+
+  # "2016-10-30T16:07:34Z"
+  my $t = strptime "sön okt 30 16:07:34 UTC 2016", "%a %b %d %T %Z %Y", locale => "sv_SE";
+
+=head1 DESCRIPTION
+
+Parses a string to get a time out of it using L<Format Specifiers> reminiscent of C's C<scanf> and indeed C<strptime> functions.
+
+=head1 FUNCTIONS
+
+=cut
+
 our $loc_db;
 
 my %parser; %parser = (
-
-#  Support these formats:
-#
-#    %A - national representation of the full weekday name (eg Monday)
-
     '%A' => fun (:$locale) {
         my @weekdays = @{ _get_locale(weekdays => $locale) };
         my $re = list2re(@weekdays);
         return qr"(?<A>$re)";
     },
-
-#    %a - national representation of the abbreviated weekday name (eg Mon)
-
     '%a' => fun (:$locale) {
         my @weekdays_abbr = @{ _get_locale(weekdays_abbr => $locale) };
         my $re = list2re(@weekdays_abbr);
         return qr"(?<a>$re)";
     },
-
-#    %B - national representation of the full month name (eg January)
-
     '%B' => fun (:$locale) {
         my @months = @{ _get_locale(months => $locale) };
         my $re = list2re(@months);
         return qr"(?<B>$re)";
     },
-
-#    %b - national representation of the abbreviated month name (eg Jan)
-
     '%b' => fun (:$locale) {
         my @months_abbr = @{ _get_locale(months_abbr => $locale) };
         my $re = list2re(@months_abbr);
         return qr"(?<b>$re)";
     },
-
-#    %C - 2 digit century (eg 20)
-
     '%C' => fun () { qr"(?<C>[0-9][0-9])"; },
-
-#    #c - The date and time representation for the current locale.
-
     '%c' => fun (:$locale) { _get_locale(datetime => $locale); },
-
-#    %D - equivalent to %m/%d/%y (eg 01/31/16)
-
     '%D' => fun () {
         return $parser{'%m'}->(), qr!/!, $parser{'%d'}->(), qr!/!, $parser{'%y'}->();
     },
-
-#    %d - 2 digit day of month (eg 30)
-
     '%d' => fun () { qr"(?<d>[0-9][0-9])"; },
-
-#    %e - 1/2 digit day of month (eg 9)
-
     '%e' => fun () { qr"\s?(?<e>[0-9][0-9]?)"; },
-
-#    %F - equivalent to %Y-%m-%d (eg 2016-01-31)
-
     '%F' => fun () {
         return $parser{'%Y'}->(), qr/-/, $parser{'%m'}->(), qr/-/, $parser{'%d'}->();
     },
-
-#    %H - 2 digit hour in 24-hour time (eg 23)
-
     '%H' => fun () { qr"(?<H>[0-9][0-9])"; },
-
-#    %h - equivalent to %b (eg Jan)
-
     '%h' => fun (:$locale) { $parser{'%b'}->(locale => $locale) },
-
-#    %I - 2 digit hour in 12-hour time (eg 11)
-
     '%I' => fun () { qr"(?<I>[0-9][0-9])"; },
-
-#    %j - 3 digit day of the year (eg 001)
-
     '%j' => fun () { qr"(?<j>[0-9][0-9][0-9])"; },
-
-#    %k - 1/2 digit hour in 24-hour time (eg 9)
-
     '%k' => fun () { qr"\s?(?<k>[0-9][0-9]?)"; },
-
-#    %l - 1/2 digit hour in 12-hour time (eg 9)
-
     '%l' => fun () { qr"\s?(?<l>[0-9][0-9]?)"; },
-
-#    %M - 2 digit minute (eg 45)
-
     '%M' => fun () { qr"(?<M>[0-9][0-9])"; },
-
-#    %m - 2 digit month (eg 12)
-
     '%m' => fun () { qr"(?<m>[0-9][0-9])"; },
-
-#    %n - newline - arbitrary whitespace
-
     '%n' => fun () { qr"\s+"; },
-
-#    %p - national representation of a.m./p.m.
-
     '%p' => fun (:$locale) {
         my @am_pm = @{ _get_locale(am_pm => $locale) };
         return () unless @am_pm;
         my $re = list2re(@am_pm);
         return qr"(?<p>$re)";
     },
-
-#    %X - The time, using the locale's time format
-
     '%X' => fun (:$locale) { _get_locale(time => $locale) },
-
-#    %x - The date, using the locale's date format
-
     '%x' => fun (:$locale) { _get_locale(date => $locale) },
-
-#    %R - equivalent to %H:%M (eg 22:05)
-
     '%R' => fun () {
         return $parser{'%H'}->(), qr/:/, $parser{'%M'}->();
     },
-
-#    %r - equivalent to %I:%M:%S %p in POSIX - not in other locales (eg 10:05:00 p.m.)
-
     '%r' => fun (:$locale) { _get_locale(time_ampm => $locale); },
-
-#    %S - 2 digit second
-
     '%S' => fun () { qr"(?<S>[0-9][0-9])"; },
-
-#    %s - 1/2/3/4/5/... digit seconds since epoch (eg 1477629064)
-
     '%s' => fun () { qr"\s*(?<s>[0-9]+)"; },
-
-#    %T - equivalent to %H:%M:%S
-
     '%T' => fun () {
         return $parser{'%H'}->(), qr/:/, $parser{'%M'}->(), qr/:/, $parser{'%S'}->();
     },
-
-#    %t - tab - arbitrary whitespace
-
     '%t' => fun () { qr"\s+"; },
-
-#    %U - 2 digit week number of the year Sunday-based week (eg 00)
-
     '%U' => fun () { qr"(?<U>[0-9][0-9])"; },
-
-#    %u - 1 digit weekday Monday-based week (eg 1)
-
     '%u' => fun () { qr"(?<u>[0-9])"; },
-
-#    %V - 2 digit week number of the year Monday-based week (eg 01)
-
     '%V' => fun () { qr"(?<V>[0-9][0-9])"; },
-
-#    %v - equivalent to %e-%b-%Y (eg 9-Jan-2016)
-
     '%v' => fun (:$locale) {
         return $parser{'%e'}->(), qr/-/, $parser{'%b'}->(locale => $locale), qr/-/, $parser{'%Y'}->()
     },
-
-#    %W - 2 digit week number of the year Monday-based week (eg 00)
-
     '%W' => fun () { qr"(?<W>[0-9][0-9])"; },
-
-#    %w - 1 digit weekday Sunday-based week (eg 0)
-
     '%w' => fun () { qr"(?<w>[0-9])"; },
-
-#    %Y - 1/2/3/4 digit year including century (eg 2016)
-
     '%Y' => fun () { qr"(?<Y>[0-9]{1,4})"; },
-
-#    %y - 2 digit year without century (eg 99)
-
     '%y' => fun () { qr"(?<y>[0-9][0-9])"; },
-
-#    %Z - time zone name (eg CET)
-
     '%Z' => fun () { qr"(?<Z>\S+)"; },
-
-#    %z - time zone offset from UTC (eg +0100)
-
     '%z' => fun () { qr"(?<z>[-+][0-9][0-9](?::?[0-9][0-9])?)"; },
-
-#    %% - percent sign
-
     '%%' => fun () { qr"%"; },
-
 );
+
+=head2 strptime
+
+  my $t = strptime($str, $fmt);
+  my $t = strptime($str, $fmt, locale => $locale, strict => $strict);
+
+C<strptime> takes a string and a format, and tries to parse the string using the format to create a L<Time::C> object representing the time.
+
+=over
+
+=item C<$str>
+
+C<$str> is the string to parse.
+
+=item C<$fmt>
+
+C<$fmt> is the format specifier used to parse the C<$str>. If it can't match C<$str> to get a useful date/time it will throw an exception. See L<Format Specifiers> for details on the supported format specifiers.
+
+=item C<< locale => $locale >>
+
+C<$locale> is an optional boolean flag which defaults to C<C>. It is used to determine how the format specifiers C<%a>, C<%A>, C<%b>, C<%B>, C<%c>, C<%p>, and C<%r> match. See L<Format Specifiers> for more details.
+
+=item C<< strict => $strict >>
+
+C<$strict> is an optional boolean flag which defaults to true. If it is a true value, the C<$fmt> must describe the string entirely. If it is false, the C<$fmt> may describe only part of the string, and any extra bits, either before or after, are discarded.
+
+=back
+
+=cut
 
 fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1) {
     require Time::C;
@@ -504,3 +429,190 @@ fun _get_locale($type, $locale) {
 1;
 
 __END__
+
+=head1 Format Specifiers
+
+The format specifiers work in a format to parse distinct portions of a string. Any part of the format that isn't a format specifier will be matched verbatim. All format specifiers start with a C<%> character. Some implementations of C<strptime> will support some of them, and other implementations will support others. This implementation will support the ones described below:
+
+=over
+
+=item C<%A>
+
+Full weekday, depending on the locale, e.g. C<söndag>.
+
+=item C<%a>
+
+Abbreviated weekday, depending on the locale, e.g. C<sön>.
+
+=item C<%B>
+
+Full month name, depending on the locale, e.g. C<oktober>.
+
+=item C<%b>
+
+Abbreviated month name, depending on the locale, e.g. C<okt>.
+
+=item C<%C>
+
+2 digit century, e.g. C<20>.
+
+=item C<%c>
+
+The date and time representation for the current locale, e.g. C<sön okt 30 16:07:34 UTC 2016>.
+
+=item C<%D>
+
+Equivalent to C<%m/%d/%y>, e.g. C<10/30/16>.
+
+=item C<%d>
+
+2 digit day of month, e.g. C<30>.
+
+=item C<%e>
+
+1/2 digit day of month, possibly space padded, e.g. C<30>.
+
+=item C<%F>
+
+Equivalent to C<%Y-%m-%d>, e.g. C<2016-10-30>.
+
+=item C<%H>
+
+2 digit hour in 24-hour time, e.g. C<16>.
+
+=item C<%h>
+
+Equivalent to C<%b>, e.g. C<okt>.
+
+=item C<%I>
+
+2 digit hour in 12-hour time, e.g. C<04>.
+
+=item C<%j>
+
+3 digit day of the year, e.g. C<304>.
+
+=item C<%k>
+
+1/2 digit hour in 24-hour time, e.g. C<16>.
+
+=item C<%l>
+
+1/2 digit hour in 12-hour time, possibly space padded, e.g. C< 4>.
+
+=item C<%M>
+
+2 digit minute, e.g. C<07>.
+
+=item C<%m>
+
+2 digit month, e.g. C<10>.
+
+=item C<%n>
+
+Arbitrary whitespace, like C<m/\s+/>.
+
+=item C<%p>
+
+Matches the locale version of C<a.m.> or C<p.m.>, if the locale has that. Otherwise matches the empty string.
+
+=item C<%X>
+
+The time representation for the current locale, e.g. C<16:07:34>.
+
+=item C<%x>
+
+The date representation for the current locale, e.g. C<2016-10-30>.
+
+=item C<%R>
+
+Equivalent to C<%H:%M>, e.g. C<16:07>.
+
+=item C<%r>
+
+The time representation with am/pm for the current locale. For example in the C<POSIX> locale, it is equivalent to C<%I:%M:%S %p>.
+
+=item C<%S>
+
+2 digit second, e.g. C<34>.
+
+=item C<%s>
+
+The epoch, i.e. the number of seconds since C<1970-01-01T00:00:00Z>.
+
+=item C<%T>
+
+Equivalent to C<%H:%M:%S>, e.g. C<16:07:34>.
+
+=item C<%t>
+
+Arbitrary whitespace, like C<m/\s+/>.
+
+=item C<%U>
+
+2 digit week number of the year, Sunday-based week, e.g. C<44>.
+
+=item C<%u>
+
+1 digit weekday, Monday-based week, e.g. C<7>.
+
+=item C<%V>
+
+2 digit week number of the year, Monday-based week, e.g. C<43>.
+
+=item C<%v>
+
+Equivalent to C<%e-%b-%Y>, which depends on the locale, e.g. C<30-okt-2016>.
+
+=item C<%W>
+
+2 digit week number of the year, Monday-based week, e.g. C<43>.
+
+=item C<%w>
+
+1 digit weekday, Sunday-based week, e.g. C<0>.
+
+=item C<%Y>
+
+Year, 1-4 digits, representing the full year since year 0, e.g. C<2016>.
+
+=item C<%y>
+
+2 digit year without century, which will be interpreted as being within 50 years of the current year, whether that means adding 1900 or 2000 to it, e.g. C<16>.
+
+=item C<%Z>
+
+Time zone name, e.g. C<CET>, or C<Europe/Stockholm>.
+
+=item C<%z>
+
+Offset from UTC in hours and minutes, or just hours, e.g. C<+0100>.
+
+=item C<%%>
+
+A literal C<%> sign.
+
+=back
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Time::Piece>
+
+Also provides a C<strptime()>, but it doesn't deal well with timezones or offsets.
+
+=item L<POSIX::strptime>
+
+Also provides a C<strptime()>, but it also doesn't deal well with timezones or offsets.
+
+=item L<Time::Strptime>
+
+Also provides a C<strptime()>, but it doesn't handle C<%c>, C<%x>, or C<%X> format specifiers at all, only supports a C<POSIX> version of C<%r>, and is arguably buggy with C<%a>, C<%A>, C<%b>, C<%B>, and C<%p>.
+
+=item L<DateTime::Format::Strptime>
+
+Provides an OO-interface for strptime, but it has the same issues as C<Time::Strptime>.
+
+=back
+
