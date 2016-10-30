@@ -730,7 +730,7 @@ Functions exactly like C<string>.
 
 =cut
 
-method strftime ($t: $format = undef, $new_str = undef) :lvalue { $t->string(@_); }
+method strftime ($t: $new_str = undef, :$format = undef, :$locale = 'C', :$strict = 1) :lvalue { $t->string(@_); }
 
 =head2 year
 
