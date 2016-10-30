@@ -519,6 +519,10 @@ A literal C<%> sign.
 
 =over
 
+=item L<Time::C>
+
+The companion to this module, which represents the actual time we parsed.
+
 =item L<Time::Piece>
 
 Also provides a C<strptime()>, but it doesn't deal well with timezones or offsets.

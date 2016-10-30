@@ -1189,6 +1189,10 @@ Like C<Time::C> but for durations.
 
 If you need C<Time::C> times to recurr at regular intervals.
 
+=item L<Time::P>
+
+For parsing times from strings.
+
 =item L<Time::Moment>
 
 This implements most of the logic of this module.
