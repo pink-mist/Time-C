@@ -124,7 +124,7 @@ C<$fmt> is the format specifier used to parse the C<$str>. If it can't match C<$
 
 =item C<< locale => $locale >>
 
-C<$locale> is an optional boolean flag which defaults to C<C>. It is used to determine how the format specifiers C<%a>, C<%A>, C<%b>, C<%B>, C<%c>, C<%p>, and C<%r> match. See L<Format Specifiers> for more details.
+C<$locale> is an optional parameter which defaults to C<C>. It is used to determine how the format specifiers C<%a>, C<%A>, C<%b>, C<%B>, C<%c>, C<%p>, and C<%r> match. See L<Format Specifiers> for more details.
 
 =item C<< strict => $strict >>
 
