@@ -148,7 +148,7 @@ C<$minute> sets the minute of the day/hour, depending on what other options were
 
 =item C<< hour => $hour >>
 
-C<$hout> sets the hour of the day.
+C<$hour> sets the hour of the day.
 
 =item C<< mday => $mday >>
 
