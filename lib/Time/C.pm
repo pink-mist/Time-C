@@ -14,6 +14,7 @@ use Carp qw/ croak /;
 use Function::Parameters qw/ :strict /;
 use Time::C::Sentinel;
 use Time::D;
+use Time::P ();
 use Time::Moment;
 use Time::Piece ();
 use Time::Zone::Olson;
@@ -358,31 +359,41 @@ method now_utc ($c:) { $c->localtime( time, 'UTC' ); }
 =head2 from_string
 
   my $t = Time::C->from_string($str);
-  my $t = Time::C->from_string($str, $format);
-  my $t = Time::C->from_string($str, $format, $expected_tz);
+  my $t = Time::C->from_string($str, format => $format);
+  my $t = Time::C->from_string($str, format => $format, locale => $locale);
+  my $t = Time::C->from_string($str, format => $format, locale => $locale, strict => $strict);
+  my $t = Time::C->from_string($str, format => $format, locale => $locale, strict => $strict, tz => $tz);
 
-Creates a Time::C object for the specified C<$str>, using the optional C<$format> to parse it, and the optional C<$expected_tz> to set an unambigous timezone, if it matches the offset the parsing operation gave.
+Creates a Time::C object for the specified C<$str>, using the optional C<$format> to parse it, and the optional C<$tz> to set an unambigous timezone, if it matches the offset the parsing operation gave.
 
 =over
 
 =item C<$str>
 
-This is the string that will be parsed by either L<Time::Piece/strptime> or L<Time::Moment/from_string>.
+This is the string that will be parsed by either L<Time::P/strptime> or L<Time::Moment/from_string>.
 
-=item C<$format>
+=item C<< format => $format >>
 
-This is the format that L<Time::Piece/strptime> will be given, by default it is C<undef>. If it is not defined, L<Time::Moment/from_string> will be used instead.
+If specified, will be passed to L<Time::P/strptime> for parsing. Otherwise, L<Time::Moment/from_string> will be used.
 
-=item C<$expected_tz>
+=item C<< locale => $locale >>
 
-If the parsed time contains a zone or offset that parses, and the offset matches the C<$expected_tz> offset, C<$expected_tz> will be set as the timezone. If it doesn't match, a generic timezone matching the offset will be set, such as C<UTC> for an offset of C<0>. This variable will also default to C<UTC>.
+If C<strptime> is used for parsing, it will be given the specified C<$locale>. Defaults to C<C>.
+
+=item C<< strict => $strict >>
+
+If C<strptime> is used for parsing, it will be given the specified C<$strict>. Defaults to C<1>.
+
+=item C<< tz => $tz >>
+
+If there is no valid timezone specified in the format, but C<$tz> is given and matches the offset, then C<$tz> will be set as the timezone. If it doesn't match, and there was no valid timezone specified in the format, a generic timezone matching the offset will be set, such as C<UTC> for an offset of C<0>. This variable will also default to C<UTC>.
 
 =back
 
 =cut
 
-method from_string ($c: $str, $format = undef, $expected_tz = 'UTC') {
-    my @p = _parse($str, $format, $expected_tz);
+method from_string ($c: $str, :$format = undef, :$locale = 'C', :$strict = 1, :$tz = 'UTC') {
+    my @p = _parse($str, $format, $tz, locale => $locale, strict => $strict);
 
     bless {epoch => $p[0], tz => $p[1]}, $c;
 }
@@ -390,27 +401,35 @@ method from_string ($c: $str, $format = undef, $expected_tz = 'UTC') {
 =head2 strptime
 
   my $t = Time::C->strptime($str, $format);
+  my $t = Time::C->strptime($str, $format, locale => $locale);
+  my $t = Time::C->strptime($str, $format, locale => $locale, strict => $strict);
 
-Creates a Time::C object for the specified C<$str> using the C<$format> to parse it with L<Time::Piece/strptime>.
+Creates a Time::C object for the specified C<$str> using the C<$format> to parse it with L<Time::P/strptime>.
 
 =over
 
 =item C<$str>
 
-This is the string that will be parsed by L<Time::Piece/strptime>.
+This is the string that will be parsed by L<Time::P/strptime>.
 
 =item C<$format>
 
-This is the format that L<Time::Piece/strptime> will be given.
+This is the format that L<Time::P/strptime> will be given.
+
+=item C<< locale => $locale >>
+
+Gives the C<$locale> parameter to L<Time::P/strptime>. Defaults to C<C>.
+
+=item C<< strict => $strict >>
+
+Gives the C<$strict> parameter to L<Time::P/strptime>. Defaults to C<1>.
 
 =back
 
 =cut
 
-method strptime ($c: $str, $format) {
-    my @p = _parse($str, $format, 'UTC');
-
-    bless {epoch => $p[0], tz => $p[1]}, $c;
+method strptime ($c: $str, $format, :$locale = 'C', :$strict = 1) {
+    return Time::P::strptime(@_);
 }
 
 fun _verify_tz ($tz) {
@@ -460,18 +479,16 @@ fun _get_tz ($offset) {
     return sprintf "%s%02s:%02s", $sign, $hour, $min;
 }
 
-fun _parse ($str, $format = undef, $tz = 'UTC') {
-    my $tm;
-
+fun _parse ($str, $format = undef, $tz = 'UTC', :$locale = 'C', :$strict = 1) {
     if (defined $format) {
-        my $tp = eval { local $ENV{TZ} = $tz; Time::Piece->localtime->strptime($str, $format); };
-        croak sprintf "Could not parse %s using %s.", $str, $format if not defined $tp;
+        my $t = eval { Time::P::strptime($str, $format, locale => $locale, strict => $strict) };
+        return ($t->epoch, $t->tz) if defined $t;
 
-        $tm = Time::Moment->from_object($tp);
-    } else {
-        $tm = eval { Time::Moment->from_string($str); };
-        croak sprintf "Could not parse %s.", $str if not defined $tm;
+        croak sprintf "Could not parse %s using %s: %s", $str, $format, $@;
     }
+
+    my $tm = eval { Time::Moment->from_string($str); };
+    croak sprintf "Could not parse %s.", $str if not defined $tm;
 
     my $epoch = $tm->epoch;
     my $offset = $tm->offset;
@@ -639,23 +656,54 @@ method tm ($t: $new_tm = undef) :lvalue {
 =head2 string
 
   my $str = $t->string;
-  my $str = $t->string($format);
+  my $str = $t->string(format => $format);
+  my $str = $t->string(format => $format, locale => $locale);
   $t->string = $str;
-  $t->string($format) = $str;
+  $t->string(format => $format) = $str;
+  $t->string(format => $format, locale => $locale) = $str;
+  $t->string(format => $format, strict => $strict) = $str;
+  $t->string(format => $format, locale => $locale, strict => $strict) = $str;
 
-  $t = $t->string($format, $new_str);
+  $t = $t->string($new_str, format => $format);
+  $t = $t->string($new_str, format => $format, locale => $locale);
+  $t = $t->string($new_str, format => $format, strict => $strict);
+  $t = $t->string($new_str, format => $format, locale => $locale, strict => $strict);
 
-Renders the current time to a string using the optional strftime C<$format>. If the C<$format> is not given it defaults to C<undef>. When setting this value, it tries to parse the string using L<Time::Piece/strptime> with the C<$format> or L<Time::Moment/from_string> if no C<$format> was given. If the detected C<offset> matches the current C<tz>, that is kept, otherwise it will get changed to a generic C<tz> in the form of C<Etc/GMT+X> or C<+XX:XX>.
+Renders the current time to a string using the optional strftime C<$format>. If the C<$format> is not given it defaults to C<undef>. When setting this value, it tries to parse the string using L<Time::P/strptime> with the C<$format>, C<$locale>, and C<$strict> settings, or L<Time::Moment/from_string> if no C<$format> was given.
 
-If the form C<< $t->string($format, $new_str) >> is used, it likewise updates the epoch and timezone but returns the entire object.
+If the format specifies a timezone, it will be updated if it is valid. If not, it checks if the detected C<offset> matches the current C<tz>, and if so, the C<tz> is kept, otherwise it will get changed to a generic C<tz> in the form of C<Etc/GMT+X> or C<+XX:XX>.
+
+If the form C<< $t->string($new_str) >> is used, it likewise updates the epoch and timezone but returns the entire object.
+
+B<Note>: this will not always round-trip for any given C<$format> currently, as the implementations of L<Time::Piece/strftime> and L<Time::P/strptime> have some differences, especially where locales and timezones are concerned.
+
+=over
+
+=item C<$new_str>
+
+If specified, it will update the object by parsing the C<$new_str> with L<Time::P/strptime> if a C<$format> was passed, or L<Time::Moment/from_string> otherwise.
+
+=item C<< format => $format >>
+
+If specified, will be passed to L<Time::P/strptime> for parsing, or L<Time::Piece/strftime> for formatting.
+
+=item C<< locale => $locale >>
+
+If C<strptime> is used for parsing, it will be given the specified C<$locale>. Defaults to C<C>.
+
+=item C<< strict => $strict >>
+
+If C<strptime> is used for parsing, it will be given the specified C<$strict>. Defaults to C<1>.
+
+=back
 
 =cut
 
-method string ($t: $format = undef, $new_str = undef) :lvalue {
+method string ($t: $new_str = undef, :$format = undef, :$locale = 'C', :$strict = 1) :lvalue {
     $t->{tz} = 'UTC' if not defined $t->{tz};
 
     my $setter = sub {
-        @{$t}{epoch,tz} = _parse($_[0], $format, $t->{tz});
+        @{$t}{epoch,tz} = _parse($_[0], $format, $t->{tz}, locale => $locale, strict => $strict);
 
         return $t if defined $new_str;
         return $_[0];
@@ -666,6 +714,7 @@ method string ($t: $format = undef, $new_str = undef) :lvalue {
     my $str;
     if (defined $format) {
         local $ENV{TZ} = $t->{tz};
+        local $ENV{LC_ALL} = $locale;
         my $tp = Time::Piece->localtime($t->{epoch});
         $str = $tp->strftime($format);
     } else {
