@@ -328,12 +328,17 @@ fun _parse_struct ($struct, :$locale) {
 
     # Next try to set up time bits -- these are pretty easy in comparison
 
+    # fix I and l if they're == 12 and it's ... pm? am? gah
     my $hour = $struct->{'H'};
     if (not defined $hour) { $hour = $struct->{'k'}; }
     if (not defined $hour) {
         $hour = $struct->{'I'} // $struct->{'l'};
         if (defined $hour and defined $struct->{'p'}) {
-            $hour = _get_index($struct->{'p'}, @{ $loc_db->{am_pm}{$locale} }) ? $hour + 12 : $hour;
+            if (_get_index($struct->{'p'}, @{ $loc_db->{am_pm}{$locale} })) {
+                $hour = $hour + 12 unless $hour == 12;
+            } else {
+                $hour = $hour - 12 if $hour == 12;
+            }
         }
     }
 
@@ -343,7 +348,7 @@ fun _parse_struct ($struct, :$locale) {
 
     # And last see if we have some timezone or at least offset info
 
-    my $tz = $struct->{'Z'};
+    my $tz = $struct->{'Z'}; # should verify that it's a useful tz
 
     my $offset = $struct->{'z'};
 
@@ -378,7 +383,7 @@ fun mktime ($sec, $min, $hour, $mday, $month, $year, $wday, $m_week, $yday, $epo
                 $t = Time::C->new($year, $month);
             }
         } elsif (defined $m_week) {
-            $t = Time::C->new($year)->week($m_week);
+            $t = Time::C->new($year)->week($m_week)->day_of_week(1);
             if (defined $wday) { $t->day_of_week = $wday; }
         } elsif (defined $yday) {
             $t = Time::C->new($year)->day($yday);
@@ -399,11 +404,26 @@ fun mktime ($sec, $min, $hour, $mday, $month, $year, $wday, $m_week, $yday, $epo
             } else {
                 $t = Time::C->new($year, $month);
             }
+
+            # Now add the time bits on top...
+            if (defined $hour) { $t->hour = $hour; }
+            if (defined $min) { $t->minute = $min; }
+            if (defined $sec) { $t->second = $sec; }
         } elsif (defined $m_week) {
-            $t = Time::C->new($year)->week($m_week);
+            $t = Time::C->new($year)->week($m_week)->day_of_week(1);
             if (defined $wday) { $t->day_of_week = $wday; }
+
+            # Now add the time bits on top...
+            if (defined $hour) { $t->hour = $hour; }
+            if (defined $min) { $t->minute = $min; }
+            if (defined $sec) { $t->second = $sec; }
         } elsif (defined $yday) {
             $t = Time::C->new($year)->day($yday);
+
+            # Now add the time bits on top...
+            if (defined $hour) { $t->hour = $hour; }
+            if (defined $min) { $t->minute = $min; }
+            if (defined $sec) { $t->second = $sec; }
         } else {
             # We have neither year, month, week, or day of year ...
             # So let's just make a time for today's date
@@ -439,6 +459,8 @@ fun _offset_to_minutes ($offset) {
 }
 
 fun _get_index ($needle, @haystack) {
+    if (not @haystack and $needle eq '') { return 0; }
+
     foreach my $i (0 .. $#haystack) {
         return $i if $haystack[$i] eq $needle;
     }
