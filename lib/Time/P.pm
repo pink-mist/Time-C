@@ -6,24 +6,14 @@ use warnings;
 use Carp qw/ croak /;
 use Exporter qw/ import /;
 use Function::Parameters;
-use DateTime::Locale;
 use File::Share qw/ dist_file /;
-use Data::Munge qw/ slurp /;
+use Data::Munge qw/ list2re slurp /;
 use JSON::MaybeXS qw/ decode_json /;
 
 use constant DEBUG => 0;
 
 our @EXPORT = qw/ strptime /;
 
-our %weekdays = ( C => [ qw/ Monday Tuesday Wednesday Thursday Friday Saturday Sunday / ] );
-our %weekdays_abbr = ( C => [ qw/ Mon Tue Wed Thu Fri Sat Sun / ] );
-our %months = ( C => [ qw/ January February March April May June July August September October November December / ] );
-our %months_abbr = ( C => [ qw/ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec / ] );
-our %am_pm = ( C => [ qw/ a.m. p.m. / ] );
-our %datetime;
-our %date;
-our %time;
-our %locales;
 our $loc_db;
 
 my %parser; %parser = (
@@ -33,32 +23,32 @@ my %parser; %parser = (
 #    %A - national representation of the full weekday name (eg Monday)
 
     '%A' => fun (:$locale) {
-        my @weekdays = @{ $weekdays{$locale} //= _build_locale(weekdays => $locale) };
-        my $re = _list2re(@weekdays);
+        my @weekdays = @{ _get_locale(weekdays => $locale) };
+        my $re = list2re(@weekdays);
         return qr"(?<A>$re)";
     },
 
 #    %a - national representation of the abbreviated weekday name (eg Mon)
 
     '%a' => fun (:$locale) {
-        my @weekdays_abbr = @{ $weekdays_abbr{$locale} //= _build_locale(weekdays_abbr => $locale) };
-        my $re = _list2re(@weekdays_abbr);
+        my @weekdays_abbr = @{ _get_locale(weekdays_abbr => $locale) };
+        my $re = list2re(@weekdays_abbr);
         return qr"(?<a>$re)";
     },
 
 #    %B - national representation of the full month name (eg January)
 
     '%B' => fun (:$locale) {
-        my @months = @{ $months{$locale} //= _build_locale(months => $locale) };
-        my $re = _list2re(@months);
+        my @months = @{ _get_locale(months => $locale) };
+        my $re = list2re(@months);
         return qr"(?<B>$re)";
     },
 
 #    %b - national representation of the abbreviated month name (eg Jan)
 
     '%b' => fun (:$locale) {
-        my @months_abbr = @{ $months_abbr{$locale} //= _build_locale(months_abbr => $locale) };
-        my $re = _list2re(@months_abbr);
+        my @months_abbr = @{ _get_locale(months_abbr => $locale) };
+        my $re = list2re(@months_abbr);
         return qr"(?<b>$re)";
     },
 
@@ -68,9 +58,7 @@ my %parser; %parser = (
 
 #    #c - The date and time representation for the current locale.
 
-    '%c' => fun (:$locale) {
-        return $datetime{$locale} //= _build_locale(datetime => $locale);
-    },
+    '%c' => fun (:$locale) { _get_locale(datetime => $locale); },
 
 #    %D - equivalent to %m/%d/%y (eg 01/31/16)
 
@@ -133,18 +121,19 @@ my %parser; %parser = (
 #    %p - national representation of a.m./p.m.
 
     '%p' => fun (:$locale) {
-        my @am_pm = @{ $am_pm{$locale} //= _build_locale(am_pm => $locale) };
-        my $re = _list2re(@am_pm);
+        my @am_pm = @{ _get_locale(am_pm => $locale) };
+        return () unless @am_pm;
+        my $re = list2re(@am_pm);
         return qr"(?<p>$re)";
     },
 
 #    %X - The time, using the locale's time format
 
-    '%X' => fun (:$locale) { $time{$locale} //= _build_locale(time => $locale) },
+    '%X' => fun (:$locale) { _get_locale(time => $locale) },
 
 #    %x - The date, using the locale's date format
 
-    '%x' => fun (:$locale) { $date{$locale} //= _build_locale(date => $locale) },
+    '%x' => fun (:$locale) { _get_locale(date => $locale) },
 
 #    %R - equivalent to %H:%M (eg 22:05)
 
@@ -153,12 +142,9 @@ my %parser; %parser = (
         return qr"$re";
     },
 
-#    %r - equivalent to %I:%M:%S %p (eg 10:05:00 p.m.)
+#    %r - equivalent to %I:%M:%S %p in POSIX - not in other locales (eg 10:05:00 p.m.)
 
-    '%r' => fun (:$locale) {
-        my $re = sprintf "(?<r>%s:%s:%s%s%s)", $parser{'%I'}->(), $parser{'%M'}->(), $parser{'%S'}->(), "\\s+", $parser{'%p'}->(locale => $locale);
-        return qr"$re";
-    },
+    '%r' => fun (:$locale) { _get_locale(time_ampm => $locale); },
 
 #    %S - 2 digit second
 
@@ -281,11 +267,6 @@ sub _get_tok {
     return $tok;
 }
 
-sub _list2re {
-    my $re = join '|', map quotemeta, @_;
-    qr"$re";
-}
-
 fun _parse_struct ($struct, :$locale) {
     # First, if we know the epoch, great
     my $epoch = $struct->{'s'};
@@ -311,9 +292,9 @@ fun _parse_struct ($struct, :$locale) {
     my $month = $struct->{'m'};
     if (not defined $month) {
         if (defined $struct->{'B'}) {
-            $month = _get_index($struct->{'B'}, @{ $months{$locale} }) + 1;
+            $month = _get_index($struct->{'B'}, @{ $loc_db->{months}{$locale} }) + 1;
         } elsif (defined $struct->{'b'}) {
-            $month = _get_index($struct->{'b'}, @{ $months_abbr{$locale} }) + 1;
+            $month = _get_index($struct->{'b'}, @{ $loc_db->{months_abbr}{$locale} }) + 1;
         } 
     }
 
@@ -330,9 +311,9 @@ fun _parse_struct ($struct, :$locale) {
     }
     if (not defined $wday) {
         if (defined $struct->{'A'}) {
-            $wday = _get_index($struct->{'A'}, @{ $weekdays{$locale} }) + 1;
+            $wday = _get_index($struct->{'A'}, @{ $loc_db->{days}{$locale} }) + 1;
         } elsif (defined $struct->{'a'}) {
-            $wday = _get_index($struct->{'a'}, @{ $weekdays_abbr{$locale} }) + 1;
+            $wday = _get_index($struct->{'a'}, @{ $loc_db->{days_abbr}{$locale} }) + 1;
         }
     }
 
@@ -347,7 +328,7 @@ fun _parse_struct ($struct, :$locale) {
     if (not defined $hour) {
         $hour = $struct->{'I'} // $struct->{'l'};
         if (defined $hour and defined $struct->{'p'}) {
-            $hour = _get_index($struct->{'p'}, @{ $am_pm{$locale} }) ? $hour + 12 : $hour;
+            $hour = _get_index($struct->{'p'}, @{ $loc_db->{am_pm}{$locale} }) ? $hour + 12 : $hour;
         }
     }
 
@@ -459,7 +440,7 @@ fun _get_index ($needle, @haystack) {
     croak "Could not find $needle in the list.";
 }
 
-fun _build_locale ($type, $locale) {
+fun _get_locale($type, $locale) {
     if (not defined $loc_db) {
         my $fn = dist_file('Time-C', 'locale.db');
         open my $fh, '<', $fn
@@ -467,27 +448,30 @@ fun _build_locale ($type, $locale) {
         $loc_db = decode_json slurp $fh;
     }
 
+    my @ret;
     if ($type eq 'weekdays') {
-        $locales{$locale} //= DateTime::Locale->load($locale);
-        return $locales{$locale}->day_format_wide;
+        @ret = $loc_db->{days}->{$locale};
     } elsif ($type eq 'weekdays_abbr') {
-        $locales{$locale} //= DateTime::Locale->load($locale);
-        return $locales{$locale}->day_format_abbreviated;
+        @ret = $loc_db->{days_abbr}->{$locale};
     } elsif ($type eq 'months') {
-        $locales{$locale} //= DateTime::Locale->load($locale);
-        return $locales{$locale}->month_format_wide;
+        @ret = $loc_db->{months}->{$locale};
     } elsif ($type eq 'months_abbr') {
-        $locales{$locale} //= DateTime::Locale->load($locale);
-        return $locales{$locale}->month_format_abbreviated;
+        @ret = $loc_db->{months_abbr}->{$locale};
     } elsif ($type eq 'am_pm') {
-        return $locales{$locale}->am_pm_abbreviated;
+        @ret = $loc_db->{am_pm}->{$locale};
     } elsif ($type eq 'datetime') {
-        return _compile_fmt($loc_db->{d_t_fmt}->{$locale}, $locale);
+        @ret = _compile_fmt($loc_db->{d_t_fmt}->{$locale}, locale => $locale);
     } elsif ($type eq 'date') {
-        return _compile_fmt($loc_db->{d_fmt}->{$locale}, $locale);
+        @ret = _compile_fmt($loc_db->{d_fmt}->{$locale}, locale => $locale);
     } elsif ($type eq 'time') {
-        return _compile_fmt($loc_db->{t_fmt}->{$locale}, $locale);
+        @ret = _compile_fmt($loc_db->{t_fmt}->{$locale}, locale => $locale);
+    } elsif ($type eq 'time_ampm') {
+        @ret = _compile_fmt($loc_db->{r_fmt}->{$locale}, locale => $locale);
     } else { croak "Unknown locale type: $type."; }
+
+    if (not defined $ret[0]) { croak "Value for locale type $type in locale $locale is undefined."; }
+
+    return wantarray ? @ret : $ret[0];
 }
 
 1;
