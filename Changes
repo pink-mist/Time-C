@@ -1,4 +1,6 @@
 {{$NEXT}}
+  - Fix documentation bug in Time::P's strptime function for the locale
+    parameter.
 
 0.013     2016-10-30 20:54:40+01:00 Europe/Stockholm
   - Add Time::P, implementing our own strptime().
