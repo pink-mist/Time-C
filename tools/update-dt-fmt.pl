@@ -4,9 +4,8 @@ use strict;
 use warnings;
 
 use File::Basename;
+use JSON::MaybeXS qw/ encode_json /;
 use Data::Dumper;
-
-binmode STDOUT, ":encoding(UTF-8)";
 
 my %d_t_fmt = ();
 my %d_fmt = ();
@@ -37,9 +36,5 @@ sub decode_fmt {
     return $fmt;
 }
 
-$Data::Dumper::Terse = 1;
-$Data::Dumper::Useqq = 1;
-$Data::Dumper::Sortkeys = 1;
-
-printf "# format db generated on %s from %s.\n", "".localtime, $dir;
-print Dumper { d_t_fmt => \%d_t_fmt, d_fmt => \%d_fmt, t_fmt => \%t_fmt };
+my $comment = sprintf "# format db generated on %s from %s.\n", "".localtime, $dir;
+print encode_json { comment => $comment, d_t_fmt => \%d_t_fmt, d_fmt => \%d_fmt, t_fmt => \%t_fmt };

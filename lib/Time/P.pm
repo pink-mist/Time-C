@@ -8,6 +8,8 @@ use Exporter qw/ import /;
 use Function::Parameters;
 use DateTime::Locale;
 use File::Share qw/ dist_file /;
+use Data::Munge qw/ slurp /;
+use JSON::MaybeXS qw/ decode_json /;
 
 use constant DEBUG => 0;
 
@@ -22,7 +24,7 @@ our %datetime;
 our %date;
 our %time;
 our %locales;
-our $loc_db = {};
+our $loc_db;
 
 my %parser; %parser = (
 
@@ -458,6 +460,13 @@ fun _get_index ($needle, @haystack) {
 }
 
 fun _build_locale ($type, $locale) {
+    if (not defined $loc_db) {
+        my $fn = dist_file('Time-C', 'locale.db');
+        open my $fh, '<', $fn
+          or croak "Could not open $fn: $!";
+        $loc_db = decode_json slurp $fh;
+    }
+
     if ($type eq 'weekdays') {
         $locales{$locale} //= DateTime::Locale->load($locale);
         return $locales{$locale}->day_format_wide;
@@ -473,13 +482,10 @@ fun _build_locale ($type, $locale) {
     } elsif ($type eq 'am_pm') {
         return $locales{$locale}->am_pm_abbreviated;
     } elsif ($type eq 'datetime') {
-        $loc_db //= do dist_file 'Time-C', 'locale.db';
         return _compile_fmt($loc_db->{d_t_fmt}->{$locale}, $locale);
     } elsif ($type eq 'date') {
-        $loc_db //= do dist_file 'Time-C', 'locale.db';
         return _compile_fmt($loc_db->{d_fmt}->{$locale}, $locale);
     } elsif ($type eq 'time') {
-        $loc_db //= do dist_file 'Time-C', 'locale.db';
         return _compile_fmt($loc_db->{t_fmt}->{$locale}, $locale);
     } else { croak "Unknown locale type: $type."; }
 }
