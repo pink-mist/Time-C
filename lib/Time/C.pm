@@ -212,7 +212,10 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
                 $t = Time::C->new($year, $month);
             }
         } elsif (defined $week) {
-            $t = Time::C->new($year)->week($week)->day_of_week(1);
+            $t = Time::C->new($year);
+            $t->day++ while ($t->week > 1);
+            $t = $t->week($week)->day_of_week(1);
+
             if (defined $wday) { $t->day_of_week = $wday; }
         } elsif (defined $yday) {
             $t = Time::C->new($year)->day($yday);
@@ -239,7 +242,9 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
             if (defined $minute) { $t->minute = $minute; }
             if (defined $second) { $t->second = $second; }
         } elsif (defined $week) {
-            $t = Time::C->new($year)->week($week)->day_of_week(1);
+            $t = Time::C->new($year);
+            $t->day++ while ($t->week > 1);
+            $t = $t->week($week)->day_of_week(1);
             if (defined $wday) { $t->day_of_week = $wday; }
 
             # Now add the time bits on top...
