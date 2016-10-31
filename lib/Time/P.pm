@@ -269,10 +269,9 @@ fun _parse_struct ($struct, :$locale) {
             if (_get_index($struct->{'p'}, @{ get_locale(am_pm => $locale) })) {
                 # PM
                 if ($hour < 12) { $hour += 12; }
-                elsif ($hour == 12) { $hour = 0; }
             } else {
                 # AM
-                if ($hour == 0) { $hour = 12; }
+                if ($hour == 12) { $hour = 0; }
             }
         }
     }

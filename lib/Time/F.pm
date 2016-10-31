@@ -51,7 +51,7 @@ my %formatter; %formatter = (
     '%M' => fun ($t, $l) { sprintf '%02d', $t->minute; },
     '%m' => fun ($t, $l) { sprintf '%02d', $t->month; },
     '%n' => fun ($t, $l) { "\n"; },
-    '%p' => fun ($t, $l) { get_locale(am_pm => $l)->[$t->hour < 12 ? $t->hour < 1 : $t->hour > 12]; },
+    '%p' => fun ($t, $l) { get_locale(am_pm => $l)->[not $t->hour < 12]; },
     '%X' => fun ($t, $l) { strftime($t, get_locale(time => $l), locale => $l); },
     '%x' => fun ($t, $l) { strftime($t, get_locale(date => $l), locale => $l); },
     '%R' => fun ($t, $l) { strftime($t, '%H:%M', locale => $l); },
