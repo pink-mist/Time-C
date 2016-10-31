@@ -5,8 +5,28 @@ use warnings;
 
 use Test::More;
 
+plan tests => 9277;
+
 use Time::C;
 use Time::F;
+
+foreach my $year (1990 .. 2016) {
+    my $fmt = "%G: %W-%w";
+    my $t = Time::C->new($year, 1, 1);
+    my $str = strftime($t, $fmt);
+    my $str2 = $t->tm->strftime($fmt);
+
+    is ($str, $str2, "Format $fmt for $t - $str2 correct");
+}
+
+foreach my $year (1990 .. 2016) {
+    my $fmt = "%G: %W-%w";
+    my $t = Time::C->new($year, 1, 22);
+    my $str = strftime($t, $fmt);
+    my $str2 = $t->tm->strftime($fmt);
+
+    is ($str, $str2, "Format $fmt for $t - $str2 correct");
+}
 
 my $year = 2016;
 foreach my $fmt (qw/ %C-%y %Y %y %G-%W-%w %g-%W-%w /) {
@@ -66,5 +86,4 @@ foreach my $day (1 .. 366) {
     }
 }
 
-
-done_testing;
+#done_testing;

@@ -12,7 +12,7 @@ use Time::P;
 use Time::F;
 
 my $year = 2016;
-foreach my $fmt (qw/ %C-%y %Y %y %G-%W-%w %g-%W-%w /) {
+foreach my $fmt (qw/ %C-%y %Y %y %G-%V-%w %g-%V-%w /) {
     my $t = Time::C->new($year)->day_of_year(1)->second_of_day(0);
     my $str = strftime($t, $fmt);
     note $str;
@@ -64,14 +64,13 @@ foreach my $day (1 .. 366) {
 
         is ($t2, $t, "Format $fmt processed correctly") or diag "$t -> ($fmt) -> $str -> $t2";
     }
-    foreach my $fmt (qw / %W-%A %W-%a %U-%u %U-%w %V-%u %V-%w %W-%u %W-%w /) {
+    foreach my $fmt (qw / %Y:%W-%A %Y:%W-%a %Y:%U-%u %Y:%U-%w %G:%V-%u %G:%V-%w %Y:%W-%u %Y:%W-%w /) {
         my $t = Time::C->new($year)->day_of_year($day)->second_of_day(0);
-        my $format = "%G: $fmt";
-        my $str = strftime($t, $format);
+        my $str = strftime($t, $fmt);
         note $str;
-        my $t2 = strptime($str, $format);
+        my $t2 = strptime($str, $fmt);
 
-        is ($t2, $t, "Format $format processed correctly") or diag "$t -> ($format) -> $str -> $t2";
+        is ($t2, $t, "Format $fmt processed correctly") or diag "$t -> ($fmt) -> $str -> $t2";
     }
 }
 
