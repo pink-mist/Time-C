@@ -40,8 +40,8 @@ my %formatter; %formatter = (
     '%d' => fun ($t, $l) { sprintf '%02d', $t->day; },
     '%e' => fun ($t, $l) { sprintf '%2d', $t->day; },
     '%F' => fun ($t, $l) { strftime($t, '%Y-%m-%d', locale => $l); },
-    '%G' => fun ($t, $l) { ((($t->day_of_year < 7) and ($t->week > 1)) ? $t->year - 1 : $t->year); },
-    '%g' => fun ($t, $l) { sprintf ('%02d', ((($t->day_of_year < 7) and ($t->week > 1)) ? substr($t->year - 1, -2) : substr($t->year, -2))); },
+    '%G' => fun ($t, $l) { return $t->clone->day_of_week(4)->year; },
+    '%g' => fun ($t, $l) { sprintf ('%02d', substr($formatter{'%G'}->($t, $l), -2)); },
     '%H' => fun ($t, $l) { sprintf '%02d', $t->hour; },
     '%h' => fun ($t, $l) { $formatter{'%b'}->($t, $l); },
     '%I' => fun ($t, $l) { my $I = $t->hour % 12; sprintf '%02d', $I ? $I : 12; },
@@ -61,7 +61,7 @@ my %formatter; %formatter = (
     '%T' => fun ($t, $l) { strftime($t, '%H:%M:%S', locale => $l); },
     '%t' => fun ($t, $l) { "\t"; },
     '%U' => fun ($t, $l) {
-        my $t2 = $t->clone->day_of_year(0);
+        my $t2 = $t->clone->day_of_year(1);
         $t2->day++ while $t2->day_of_week != 7;
         if ($t2->day_of_year > $t->day_of_year) { return "00"; }
         sprintf '%02d', int(($t->day_of_year - $t2->day_of_year) / 7) + 1;
@@ -70,7 +70,7 @@ my %formatter; %formatter = (
     '%V' => fun ($t, $l) { sprintf '%02d', $t->week; },
     '%v' => fun ($t, $l) { strftime($t, '%e-%b-%Y', locale => $l); },
     '%W' => fun ($t, $l) {
-        my $t2 = $t->clone->day_of_year(0);
+        my $t2 = $t->clone->day_of_year(1);
         $t2->day++ while $t2->day_of_week != 1;
         if ($t2->day_of_year > $t->day_of_year) { return "00"; }
         sprintf '%02d', int(($t->day_of_year - $t2->day_of_year) / 7) + 1;

@@ -239,18 +239,21 @@ fun _parse_struct ($struct, :$locale) {
     }
     $wday = 7 if defined $wday and $wday == 0;
 
-    if (not defined $w_week and defined $u_week and defined $wday) {
-        $w_week = $u_week; $w_week-- if $wday == 7;
+    if (not defined $w_week and defined $u_week) {
+        $w_week = $u_week;
+        if (not defined $wday) { $wday = 7; } # if no wday defined, should set to first day of week, and since the u_week starts at sunday, wday = 7
+        $w_week-- if $wday == 7;
     }
 
     if (not defined $v_week and defined $w_week) {
-        my $t = Time::C->new($year // Time::C->now_utc->year);
+        if ($wyear) { croak "Can't strptime a %G/%g year with a %W/%U week"; }
 
-        $v_week = $t->day_of_week >= 5 ? $w_week : $w_week + 1;
-        if ($wyear and $w_week == 0) { $wyear = 0; $year++; $v_week--; }
+        my $t = Time::C->new($year // Time::C->now_utc->year);
+        $v_week = $w_week;
+        if (($t->day_of_week > 1) and ($t->day_of_week < 5)) { $v_week++; }
     }
 
-    if ($wyear and defined $v_week) {
+    if ($wyear and defined $v_week and $v_week > 1) {
         $year = Time::C->mktime(year => $year, week => $v_week)->year;
     } elsif (defined $v_week and $v_week > 1) {
         if (Time::C->mktime(year => $year, week => $v_week)->year == $year + 1) {
@@ -260,7 +263,6 @@ fun _parse_struct ($struct, :$locale) {
 
     # Next try to set up time bits -- these are pretty easy in comparison
 
-    # fix I and l if they're == 12 and it's ... pm? am? gah
     my $hour = $struct->{'H'};
     if (not defined $hour) { $hour = $struct->{'k'}; }
     if (not defined $hour) {
