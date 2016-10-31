@@ -21,7 +21,7 @@ our @EXPORT = qw/ strftime /;
   # "mån 31 okt 2016 14:21:57"
   say strftime(Time::C->now_utf(), "%c", locale => "sv_SE");
 
-=DESCRIPTION
+=head1 DESCRIPTION
 
 Formats a time using L<Time::P/Format Specifiers>, according to specified locale.
 
