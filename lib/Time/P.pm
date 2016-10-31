@@ -284,6 +284,7 @@ fun _parse_struct ($struct, :$locale) {
     my $offset_n = defined $offset ? _offset_to_minutes($offset) : undef;
 
     my %struct = ();
+
     $struct{second} = $sec if defined $sec;
     $struct{minute} = $min if defined $min;
     $struct{hour} = $hour if defined $hour;
@@ -292,6 +293,7 @@ fun _parse_struct ($struct, :$locale) {
     $struct{week} = $m_week if defined $m_week;
     $struct{wday} = $wday if defined $wday;
     $struct{yday} = $yday if defined $yday;
+    $struct{year} = $year if defined $year;
     $struct{epoch} = $epoch if defined $epoch;
     $struct{tz} = $tz if defined $tz;
     $struct{offset} = $offset_n if defined $offset_n;
