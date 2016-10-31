@@ -1,5 +1,4 @@
 {{$NEXT}}
-  - Update Changes for 0.016.
 
 0.016     2016-10-31 15:48:18+01:00 Europe/Stockholm
   - Add Time::F for getting formatted strings from times.
