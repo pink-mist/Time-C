@@ -224,30 +224,36 @@ fun _parse_struct ($struct, :$locale) {
     my $mday = $struct->{'d'};
     if (not defined $mday) { $mday = $struct->{'e'}; }
 
-    my $s_week = $struct->{'U'};
-    my $m_week = $struct->{'W'} // $struct->{'V'};
+    my $u_week = $struct->{'U'};
+    my $w_week = $struct->{'W'};
+    my $v_week = $struct->{'V'};
 
-    my $wday = $struct->{'u'};
-    if (not defined $wday) {
-        $wday = $struct->{'w'};
-        $wday = 7 if defined $wday and $wday == 0;
-    }
+    my $wday = $struct->{'u'} // $struct->{'w'};
+
     if (not defined $wday) {
         if (defined $struct->{'A'}) {
             $wday = _get_index($struct->{'A'}, @{ get_locale(weekdays => $locale) });
         } elsif (defined $struct->{'a'}) {
             $wday = _get_index($struct->{'a'}, @{ get_locale(weekdays_abbr => $locale) });
         }
-        $wday = 7 if defined $wday and $wday == 0;
+    }
+    $wday = 7 if defined $wday and $wday == 0;
+
+    if (not defined $w_week and defined $u_week and defined $wday) {
+        $w_week = $u_week; $w_week-- if $wday == 7;
     }
 
-    if (not defined $m_week and defined $s_week and defined $wday) {
-        $m_week = $s_week; $m_week-- if $wday == 7;
+    if (not defined $v_week and defined $w_week) {
+        my $t = Time::C->new($year // Time::C->now_utc->year);
+
+        $v_week = $t->day_of_week >= 5 ? $w_week : $w_week + 1;
+        if ($wyear and $w_week == 0) { $wyear = 0; $year++; $v_week--; }
     }
-    if ($wyear and defined $m_week) {
-        $year = Time::C->mktime(year => $year, week => $m_week)->year;
-    } elsif (defined $m_week and $m_week > 1) {
-        if (Time::C->mktime(year => $year, week => $m_week)->year == $year + 1) {
+
+    if ($wyear and defined $v_week) {
+        $year = Time::C->mktime(year => $year, week => $v_week)->year;
+    } elsif (defined $v_week and $v_week > 1) {
+        if (Time::C->mktime(year => $year, week => $v_week)->year == $year + 1) {
             $year-- if not defined $month;
         }
     }
@@ -293,7 +299,7 @@ fun _parse_struct ($struct, :$locale) {
     $struct{hour} = $hour if defined $hour;
     $struct{mday} = $mday if defined $mday;
     $struct{month} = $month if defined $month;
-    $struct{week} = $m_week if defined $m_week;
+    $struct{week} = $v_week if defined $v_week;
     $struct{wday} = $wday if defined $wday;
     $struct{yday} = $yday if defined $yday;
     $struct{year} = $year if defined $year;
