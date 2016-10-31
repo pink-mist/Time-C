@@ -61,6 +61,8 @@ my %parser; %parser = (
     '%F' => fun () {
         return $parser{'%Y'}->(), qr/-/, $parser{'%m'}->(), qr/-/, $parser{'%d'}->();
     },
+    '%G' => fun () { qr"(?<G>[0-9]{1,4})"; },
+    '%g' => fun () { qr"(?<g>[0-9][0-9])"; },
     '%H' => fun () { qr"(?<H>[0-9][0-9])"; },
     '%h' => fun (:$locale) { $parser{'%b'}->(locale => $locale) },
     '%I' => fun () { qr"(?<I>[0-9][0-9])"; },
@@ -185,14 +187,26 @@ fun _parse_struct ($struct, :$locale) {
     #  year + month + day of month
     #  year + week + day of week
 
+    my $wyear = 0;
     my $year = $struct->{'Y'};
     if (not defined $year) {
-        if (defined $struct->{'C'}) {
+        if (defined $struct->{'G'}) {
+            $year = $struct->{'G'};
+            $wyear = 1;
+        } elsif (defined $struct->{'C'}) {
             $year = $struct->{'C'} * 100;
             $year += $struct->{'y'} if defined $struct->{'y'};
+            if (defined $struct->{'g'} and not defined $struct->{'y'}) {
+                $year += $struct->{'g'};
+                $wyear = 1;
+            }
         } elsif (defined $struct->{'y'}) {
             $year = $struct->{'y'} + 1900;
             if ($year < (Time::C->now_utc()->year - 50)) { $year += 100; }
+        } elsif (defined $struct->{'g'}) {
+            $year = $struct->{'g'} + 1900;
+            if ($year < (Time::C->now_utc()->year - 50)) { $year += 100; }
+            $wyear = 1;
         }
     }
 
@@ -228,6 +242,13 @@ fun _parse_struct ($struct, :$locale) {
 
     if (not defined $m_week and defined $s_week and defined $wday) {
         $m_week = $s_week; $m_week-- if $wday == 7;
+    }
+    if ($wyear and defined $m_week) {
+        $year = Time::C->mktime(year => $year, week => $m_week)->year;
+    } elsif (defined $m_week and $m_week > 1) {
+        if (Time::C->mktime(year => $year, week => $m_week)->year == $year + 1) {
+            $year-- if not defined $month;
+        }
     }
 
     # Next try to set up time bits -- these are pretty easy in comparison
@@ -342,6 +363,14 @@ Equivalent to C<%m/%d/%y>, e.g. C<10/30/16>.
 =item C<%F>
 
 Equivalent to C<%Y-%m-%d>, e.g. C<2016-10-30>.
+
+=item C<%G>
+
+Year, 1-4 digits, representing the week-based year since year 0, e.g. C<2016>.
+
+=item C<%g>
+
+2 digit week-based year without century, which will be interpreted as being within 50 years of the current year, whether that means adding 1900 or 2000 to it, e.g. C<16>.
 
 =item C<%H>
 
