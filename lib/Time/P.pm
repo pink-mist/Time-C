@@ -225,12 +225,12 @@ fun _parse_struct ($struct, :$locale) {
     if (not defined $mday) { $mday = $struct->{'e'}; }
 
     my $s_week = $struct->{'U'};
-    my $m_week = $struct->{'W'};
+    my $m_week = $struct->{'W'} // $struct->{'V'};
 
     my $wday = $struct->{'u'};
     if (not defined $wday) {
         $wday = $struct->{'w'};
-        $wday = 7 if defined $wday and $wday = 0;
+        $wday = 7 if defined $wday and $wday == 0;
     }
     if (not defined $wday) {
         if (defined $struct->{'A'}) {
@@ -238,6 +238,7 @@ fun _parse_struct ($struct, :$locale) {
         } elsif (defined $struct->{'a'}) {
             $wday = _get_index($struct->{'a'}, @{ get_locale(weekdays_abbr => $locale) });
         }
+        $wday = 7 if defined $wday and $wday == 0;
     }
 
     if (not defined $m_week and defined $s_week and defined $wday) {
