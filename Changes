@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.017     2016-10-31 16:09:24+01:00 Europe/Stockholm
   - Update Changes for 0.016.
   - Add release check that Changes file has actually been updated.
 
