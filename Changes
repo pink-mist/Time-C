@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.018     2016-11-01 00:25:12+01:00 Europe/Stockholm
   - Fix week-bugs in Time::P and Time::F.
   - Fix AM/PM-bugs in Time::P and Time::F.
 
