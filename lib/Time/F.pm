@@ -141,7 +141,7 @@ fun strftime ($t, $fmt, :$locale = 'C') {
     my $pos = 0;
     while (defined(my $tok = get_fmt_tok($fmt, $pos))) {
         if (exists $formatter{$tok}) {
-            $str .= $formatter{$tok}->($t, $locale);
+            $str .= $formatter{$tok}->($t, $locale) // '';
         } elsif ($tok =~ m/^%/) {
             croak "Unsupported format specifier: $tok"
         } else {
