@@ -79,7 +79,7 @@ my %formatter; %formatter = (
         if ($t2->day_of_year > $t->day_of_year) { return "00"; }
         sprintf '%02d', int(($t->day_of_year - $t2->day_of_year) / 7) + 1;
     },
-    '%U-' => fun ($t, $l) {
+    '%-U' => fun ($t, $l) {
         my $t2 = $t->clone->day_of_year(1);
         $t2->day++ while $t2->day_of_week != 7;
         if ($t2->day_of_year > $t->day_of_year) { return "0"; }
@@ -95,7 +95,7 @@ my %formatter; %formatter = (
         if ($t2->day_of_year > $t->day_of_year) { return "00"; }
         sprintf '%02d', int(($t->day_of_year - $t2->day_of_year) / 7) + 1;
     },
-    '%W-' => fun ($t, $l) {
+    '%-W' => fun ($t, $l) {
         my $t2 = $t->clone->day_of_year(1);
         $t2->day++ while $t2->day_of_week != 1;
         if ($t2->day_of_year > $t->day_of_year) { return "0"; }
