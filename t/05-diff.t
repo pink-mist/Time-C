@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 31;
+use Test::More tests => 35;
 
 use Time::D;
 use Time::C;
@@ -34,6 +34,12 @@ is ($d->to_string(3), "in 1 year, 1 month, and 1 day", "correct ->to_string(3)")
 is ($d->to_string(4), "in 1 year, 1 month, 1 day, and 5 hours", "correct ->to_string(4)");
 is ($d->to_string(5), "in 1 year, 1 month, 1 day, 5 hours, and 10 minutes", "correct ->to_string(5)");
 is ($d->to_string(6), "in 1 year, 1 month, 1 day, 5 hours, 10 minutes, and 10 seconds", "correct ->to_string(6)");
+is (Time::C->gmtime($d->comp), "1971-02-02T05:10:10Z", "correct time from ->comp");
+$d->sign = '-';
+is ($d->to_string(6), "1 year, 1 month, 2 days, 5 hours, 10 minutes, and 10 seconds ago", "correct ->to_string(6) after sign change");
+is (Time::C->gmtime($d->comp), "1968-11-29T18:49:50Z", "correct time from ->comp after sign change");
+$d->years = 0;
+is ($d->to_string(6), "1 month, 2 days, 5 hours, 10 minutes, and 10 seconds ago", "correct ->to_string(6) after setting ->years = 0");
 
 my $t_base = Time::C->new(2016,10,10,12,0,0);
 my $t_after = Time::C->new(2017,10,13,12,15,0);
