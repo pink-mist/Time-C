@@ -15,8 +15,8 @@ use Function::Parameters qw/ :strict /;
 use Time::C::Sentinel;
 use Time::D;
 use Time::P ();
+use Time::F ();
 use Time::Moment;
-use Time::Piece ();
 use Time::Zone::Olson;
 
 =head1 SYNOPSIS
@@ -43,7 +43,7 @@ use Time::Zone::Olson;
 
 =head1 DESCRIPTION
 
-Makes manipulating time structures more convenient. Internally uses L<Time::Moment>, L<Time::Piece> and L<Time::Zone::Olson>.
+Makes manipulating time structures more convenient. Internally uses L<Time::Moment>, and L<Time::Zone::Olson>.
 
 =head1 CONSTRUCTORS
 
@@ -674,13 +674,11 @@ method tm ($t: $new_tm = undef) :lvalue {
   $t = $t->string($new_str, format => $format, strict => $strict);
   $t = $t->string($new_str, format => $format, locale => $locale, strict => $strict);
 
-Renders the current time to a string using the optional strftime C<$format>. If the C<$format> is not given it defaults to C<undef>. When setting this value, it tries to parse the string using L<Time::P/strptime> with the C<$format>, C<$locale>, and C<$strict> settings, or L<Time::Moment/from_string> if no C<$format> was given.
+Renders the current time to a string using the optional strftime C<$format> and C<$locale>. If the C<$format> is not given it defaults to C<undef>. When setting this value, it tries to parse the string using L<Time::P/strptime> with the C<$format>, C<$locale>, and C<$strict> settings, or L<Time::Moment/from_string> if no C<$format> was given.
 
 If the format specifies a timezone, it will be updated if it is valid. If not, it checks if the detected C<offset> matches the current C<tz>, and if so, the C<tz> is kept, otherwise it will get changed to a generic C<tz> in the form of C<Etc/GMT+X> or C<+XX:XX>.
 
 If the form C<< $t->string($new_str) >> is used, it likewise updates the epoch and timezone but returns the entire object.
-
-B<Note>: this will not always round-trip for any given C<$format> currently, as the implementations of L<Time::Piece/strftime> and L<Time::P/strptime> have some differences, especially where locales and timezones are concerned.
 
 =over
 
@@ -690,11 +688,11 @@ If specified, it will update the object by parsing the C<$new_str> with L<Time::
 
 =item C<< format => $format >>
 
-If specified, will be passed to L<Time::P/strptime> for parsing, or L<Time::Piece/strftime> for formatting.
+If specified, will be passed to L<Time::P/strptime> for parsing, or L<Time::F/strftime> for formatting.
 
 =item C<< locale => $locale >>
 
-If C<strptime> is used for parsing, it will be given the specified C<$locale>. Defaults to C<C>.
+If the C<$format> contains a locale-specific format specifier (see L<Time::P/Format Specifiers>), it will get the locale data for C<$locale>. Defaults to C<C>.
 
 =item C<< strict => $strict >>
 
@@ -718,12 +716,9 @@ method string ($t: $new_str = undef, :$format = undef, :$locale = 'C', :$strict 
 
     my $str;
     if (defined $format) {
-        local $ENV{TZ} = $t->{tz};
-        local $ENV{LC_ALL} = $locale;
-        my $tp = Time::Piece->localtime($t->{epoch});
-        $str = $tp->strftime($format);
+        $str = Time::F::strftime($t, $format, locale => $locale);
     } else {
-        $str = Time::Moment->from_epoch($t->{epoch})->with_offset_same_instant($t->offset)->to_string;
+        $str = $t->tm->to_string;
     }
 
     sentinel value => $str, set => $setter;
@@ -1194,6 +1189,10 @@ Like C<Time::C> but for durations.
 
 If you need C<Time::C> times to recurr at regular intervals.
 
+=item L<Time::F>
+
+For formatting strings using an strftime format.
+
 =item L<Time::P>
 
 For parsing times from strings.
@@ -1202,13 +1201,13 @@ For parsing times from strings.
 
 This implements most of the logic of this module.
 
-=item L<Time::Piece>
-
-For parsing times from strings using an strptime format.
-
 =item L<Time::Zone::Olson>
 
 Interfaces with the Olson timezone database.
+
+=item L<Time::Piece>
+
+A great time library, which is even in core perl.
 
 =back
 
