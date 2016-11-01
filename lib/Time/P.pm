@@ -171,7 +171,7 @@ fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1) {
         croak sprintf "Could not match '%s' using '%s'. Match failed at position %d.", $str, $fmt, pos($str);
     }
 
-    %struct = _parse_struct(\%struct, locale => $locale);
+    %struct = _coerce_struct(\%struct, locale => $locale);
     my $time = Time::C->mktime(%struct);
 
     return $time;
@@ -196,7 +196,7 @@ fun _compile_fmt ($fmt, :$locale) {
     return @res;
 }
 
-fun _parse_struct ($struct, :$locale) {
+fun _coerce_struct ($struct, :$locale) {
     # First, if we know the epoch, great
     my $epoch = $struct->{'s'};
 
