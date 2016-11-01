@@ -7,6 +7,8 @@ use Test::More;
 
 if (not $ENV{RELEASE_TESTING}) { plan skip_all => 'Release test should only be run on release.'; }
 
+plan tests => 268;
+
 use Encode qw/ decode encode /;
 use File::Share qw/ dist_file /;
 use Carp::Always;
@@ -15,6 +17,7 @@ use Data::Munge qw/ slurp /;
 
 use Time::C;
 use Time::P;
+use Time::F;
 
 binmode STDERR, ":encoding(UTF-8)";
 
@@ -28,50 +31,49 @@ my $fn = dist_file 'Time-C', 'locale.db';
 open my $fh, '<', $fn or die "Could not open $fn: $!";
 my $loc_db = decode_json slurp $fh;
 
+sub loc_db_entries {
+    my $l = shift;
+    my %entries = map { $_, $loc_db->{$_}{$l} } grep { ref $loc_db->{$_} eq 'HASH' and exists $loc_db->{$_}{$l} } keys %{ $loc_db };
+    my @entries;
+    foreach my $k (sort keys %entries) {
+        my $entry = $entries{$k};
+        if (ref $entry eq 'ARRAY') { $entry = join ", ", @{ $entry }; }
+        push(@entries, sprintf "%s: %s", $k, $entry);
+    }
+    return join "\n", @entries;
+}
+
 foreach my $l (sort keys %{ $loc_db->{d_t_fmt} }) {
 SKIP: {
-    skip "$l => Charset issue.", 1 if in($l, qw/ uz_UZ@cyrillic nan_TW@latin tt_RU@iqtelif sr_RS@latin sd_IN@devanagari ks_IN@devanagari km_KH be_BY@latin /);
+    skip "$l => Error in d_t spec.", 1 if in($l, qw/ km_KH /);
     skip "$l => Not a proper locale.", 1 if in ($l, qw/ i18n /);
     skip "$l => Error in date spec.", 1 if in ($l, qw/ ms_MY mt_MT id_ID hy_AM /);
     skip "$l => Doesn't actually display a time.", 1 if in ($l, qw/ br_FR /);
-    skip "$l => Treated like aa_ER", 1 if in ($l, qw/ aa_ER@saaho /);
 
     my $t = Time::C->now_utc();
 
-    my $stdout = do {
-        local $ENV{LC_ALL} = "$l.UTF-8";
-        local $ENV{TZ} = "UTC";
-        local $/;
-        open my $fh, '-|', 'date', '+%c';
-        readline $fh;
-    };
+    my $str = eval { strftime($t, "%c", locale => $l); };
+    skip "Could not strftime.", 1 if not defined $str;
 
-    chomp $stdout;
-
-    my $data = decode('UTF-8', $stdout);
-
-    note "$l => $stdout";
-    my $p = eval { strptime($data, "%c", locale => $l) };
+    note encode 'UTF-8', "$l => $str";
+    my $p = eval { strptime($str, "%c", locale => $l); };
 
     if (defined $p) {
         cmp_ok ($p->epoch - $t->epoch, '>=', '-60', "$l => Correct time calculated!") or
-          diag sprintf("Error: %s\nStr: %s\nFormat: %s\nR-Format: %s\n\n", "$p is not close enough to $t", $data, encode('UTF-8', $loc_db->{d_t_fmt}{$l}), encode('UTF-8', $loc_db->{r_fmt}{$l}));
+          diag sprintf("Error: %s\nStr: %s\n%s\n\n", "$p is not close enough to $t", $str, loc_db_entries($l));
     } else {
         my $err = $@;
         if ($err =~ /^Unsupported format specifier: (%\S+)/) {
             skip "$l => Unsupported format specifier: $1", 1;
         } else {
             fail "$l => Correct time calculated!";
-            diag sprintf("Error: %s\nStr: %s\nFormat: %s\nR-Format: %s\nAM: %s\nPM: %s\n\n",
+            diag sprintf("Error: %s\nStr: %s\n%s\n\n",
               encode('UTF-8', $err),
-              $data,
-              encode('UTF-8', $loc_db->{d_t_fmt}{$l}),
-              encode('UTF-8', $loc_db->{r_fmt}{$l} // ''),
-              ${ $loc_db->{am_pm}{$l} // [] }[0] // '',
-              ${ $loc_db->{am_pm}{$l} // [] }[1] // '');
+              $str,
+              loc_db_entries($l));
         }
     }
 }
 }
 
-done_testing;
+#done_testing;
