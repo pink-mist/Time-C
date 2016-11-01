@@ -1,4 +1,9 @@
 {{$NEXT}}
+  - Change ->string and ->strftime in Time::C to use Time::F instead of
+    Time::Piece.
+  - Add support for %-* format specifiers for some formats in Time::F, and
+    Time::P.
+  - Change a couple of release tests not to shell out to 'date'.
 
 0.018     2016-11-01 00:25:12+01:00 Europe/Stockholm
   - Fix week-bugs in Time::P and Time::F.
