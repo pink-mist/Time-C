@@ -92,7 +92,11 @@ method _computed_setter ($d: $key, $new) {
 
     my $ct = Time::C->gmtime($d->comp);
     return $val, sub {
-        $ct->$key -= $val - $_[0];
+        if ($diff{sign} eq '-') {
+            $ct->$key -= $_[0] - $val;
+        } else {
+            $ct->$key -= $val - $_[0];
+        }
         $d->comp = $ct->epoch;
 
         return $d if defined $new;
