@@ -1,10 +1,18 @@
 use strict;
 use warnings;
+use utf8;
 
-use Test::More tests => 14;
+use Test::More;
+
+plan tests => 33;
 
 use Time::C;
+use Time::D;
+use Time::F;
+use Time::P;
+use Time::R;
 
+# start with Time::C synopsis
 my $t = Time::C->from_string('2016-09-23T04:28:30Z');
 isa_ok($t, "Time::C");
 
@@ -40,3 +48,53 @@ is ($days[3], "2016-03-03T00:00:00Z", 'fourth day of week correct');
 is ($days[4], "2016-03-04T00:00:00Z", 'fifth day of week correct');
 is ($days[5], "2016-03-05T00:00:00Z", 'sixth day of week correct');
 is ($days[6], "2016-03-06T00:00:00Z", 'seventh day of week correct');
+
+# then Time::D synopsis
+my $dstr = Time::D->new(time, time - 3600)->to_string();
+is ($dstr, "1 hour ago", "initial diff correct");
+
+is (Time::D->new(time)->to_string(), "now", "diff with no difference correct");
+
+my $d = Time::D->new(Time::C->from_string("2016-09-29T20:06:03Z")->epoch);
+isa_ok ($d, "Time::D");
+$d->comp(Time::C->from_string("2000-01-01T00:00:00Z")->epoch);
+is ($d->to_string(), "16 years, 8 months, 4 weeks, 20 hours, 6 minutes, and 3 seconds ago", "Time comparison to 2000-01-01T00:00:00Z correct");
+
+$d->years = 0;
+is ($d, "8 months, and 4 weeks ago", "setting years to 0 correct");
+
+$d->months--;
+is ($d, "7 months, and 4 weeks ago", "decrementing months correct");
+
+is (Time::C->gmtime($d->comp)->string(), "2016-02-01T00:00:00Z", "comparison time correct");
+
+# and now Time::F synopsis
+my $str = strftime(Time::C->from_string("2016-10-31T14:21:57Z"), "%c", locale => "sv_SE");
+is ($str, "mån 31 okt 2016 14:21:57", "strftime works correctly");
+
+# and Time::P synopsis
+my $p = strptime "sön okt 30 16:07:34 UTC 2016", "%a %b %d %T %Z %Y", locale => "sv_SE";
+isa_ok($p, "Time::C");
+is ($p, "2016-10-30T16:07:34Z", "strptime works correctly");
+
+# and last Time::R
+my $start = Time::C->new(2016,1,31);
+my $r = Time::R->new($start, months => 1);
+isa_ok($r, "Time::R");
+
+is ($r->next(), "2016-02-29T00:00:00Z", "first recurrence correct");
+
+is ($r->next(), "2016-03-31T00:00:00Z", "second recurrence correct");
+
+$r->current = Time::C->new(2016,9,30);
+
+my @until = $r->until(Time::C->new(2017,1,1));
+is (@until, 4, 'Correct number of times in @until');
+is ($until[0], "2016-09-30T00:00:00Z", 'First time in @until correct');
+is ($until[1], "2016-10-31T00:00:00Z", 'Second time in @until correct');
+is ($until[2], "2016-11-30T00:00:00Z", 'Third time in @until correct');
+is ($until[3], "2016-12-31T00:00:00Z", 'Fourth time in @until correct');
+
+is ($r->next(), "2017-01-31T00:00:00Z", "next after until correct");
+
+#done_testing;
