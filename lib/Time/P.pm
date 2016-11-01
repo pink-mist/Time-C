@@ -31,78 +31,96 @@ Parses a string to get a time out of it using L<Format Specifiers> reminiscent o
 =cut
 
 my %parser; %parser = (
-    '%A' => fun (:$locale) {
+    '%A'  => fun (:$locale) {
         my @weekdays = @{ get_locale(weekdays => $locale) };
         my $re = list2re(@weekdays);
         return qr"(?<A>$re)";
     },
-    '%a' => fun (:$locale) {
+    '%a'  => fun (:$locale) {
         my @weekdays_abbr = @{ get_locale(weekdays_abbr => $locale) };
         my $re = list2re(@weekdays_abbr);
         return qr"(?<a>$re)";
     },
-    '%B' => fun (:$locale) {
+    '%B'  => fun (:$locale) {
         my @months = @{ get_locale(months => $locale) };
         my $re = list2re(@months);
         return qr"(?<B>$re)";
     },
-    '%b' => fun (:$locale) {
+    '%b'  => fun (:$locale) {
         my @months_abbr = @{ get_locale(months_abbr => $locale) };
         my $re = list2re(@months_abbr);
         return qr"(?<b>$re)";
     },
-    '%C' => fun () { qr"(?<C>[0-9][0-9])"; },
-    '%c' => fun (:$locale) { _compile_fmt(get_locale(datetime => $locale), locale => $locale); },
-    '%D' => fun () {
+    '%C'  => fun () { qr"(?<C>[0-9][0-9])"; },
+    '%-C' => fun () { qr"(?<C>[0-9][0-9]?)"; },
+    '%c'  => fun (:$locale) { _compile_fmt(get_locale(datetime => $locale), locale => $locale); },
+    '%D'  => fun () {
         return $parser{'%m'}->(), qr!/!, $parser{'%d'}->(), qr!/!, $parser{'%y'}->();
     },
-    '%d' => fun () { qr"(?<d>[0-9][0-9])"; },
-    '%e' => fun () { qr"\s?(?<e>[0-9][0-9]?)"; },
-    '%F' => fun () {
+    '%d'  => fun () { qr"(?<d>[0-9][0-9])"; },
+    '%-d' => fun () { qr"(?<d>[0-9][0-9]?)"; },
+    '%e'  => fun () { qr"(?:\s(?<e>[0-9])|(?<e>[0-9][0-9]))"; },
+    '%-e' => fun () { qr"(?<e>[0-9][0-9]?)"; },
+    '%F'  => fun () {
         return $parser{'%Y'}->(), qr/-/, $parser{'%m'}->(), qr/-/, $parser{'%d'}->();
     },
-    '%G' => fun () { qr"(?<G>[0-9]{1,4})"; },
-    '%g' => fun () { qr"(?<g>[0-9][0-9])"; },
-    '%H' => fun () { qr"(?<H>[0-9][0-9])"; },
-    '%h' => fun (:$locale) { $parser{'%b'}->(locale => $locale) },
-    '%I' => fun () { qr"(?<I>[0-9][0-9])"; },
-    '%j' => fun () { qr"(?<j>[0-9][0-9][0-9])"; },
-    '%k' => fun () { qr"\s?(?<k>[0-9][0-9]?)"; },
-    '%l' => fun () { qr"\s?(?<l>[0-9][0-9]?)"; },
-    '%M' => fun () { qr"(?<M>[0-9][0-9])"; },
-    '%m' => fun () { qr"(?<m>[0-9][0-9])"; },
-    '%n' => fun () { qr"\s+"; },
-    '%p' => fun (:$locale) {
+    '%G'  => fun () { qr"(?<G>[0-9]{4})"; },
+    '%-G' => fun () { qr"(?<G>[0-9]{1,4})"; },
+    '%g'  => fun () { qr"(?<g>[0-9][0-9])"; },
+    '%-g' => fun () { qr"(?<g>[0-9][0-9]?)"; },
+    '%H'  => fun () { qr"(?<H>[0-9][0-9])"; },
+    '%-H' => fun () { qr"(?<H>[0-9][0-9]?)"; },
+    '%h'  => fun (:$locale) { $parser{'%b'}->(locale => $locale) },
+    '%I'  => fun () { qr"(?<I>[0-9][0-9])"; },
+    '%-I' => fun () { qr"(?<I>[0-9][0-9]?)"; },
+    '%j'  => fun () { qr"(?<j>[0-9]{3})"; },
+    '%-j' => fun () { qr"(?<j>[0-9]{1,3})"; },
+    '%k'  => fun () { qr"(?:\s(?<k>[0-9])|(?<k>[0-9][0-9]))"; },
+    '%-k' => fun () { qr"(?<k>[0-9][0-9]?)"; },
+    '%l'  => fun () { qr"(?:\s(?<l>[0-9])|(?<l>[0-9][0-9]))"; },
+    '%-l' => fun () { qr"(?<l>[0-9][0-9]?)"; },
+    '%M'  => fun () { qr"(?<M>[0-9][0-9])"; },
+    '%-M' => fun () { qr"(?<M>[0-9][0-9]?)"; },
+    '%m'  => fun () { qr"(?<m>[0-9][0-9])"; },
+    '%-m' => fun () { qr"(?<m>[0-9][0-9]?)"; },
+    '%n'  => fun () { qr"\s+"; },
+    '%p'  => fun (:$locale) {
         my @am_pm = @{ get_locale(am_pm => $locale) };
         return () unless @am_pm;
         my $re = list2re(@am_pm);
         return qr"(?<p>$re)";
     },
-    '%X' => fun (:$locale) { _compile_fmt(get_locale(time => $locale), locale => $locale); },
-    '%x' => fun (:$locale) { _compile_fmt(get_locale(date => $locale), locale => $locale); },
-    '%R' => fun () {
+    '%X'  => fun (:$locale) { _compile_fmt(get_locale(time => $locale), locale => $locale); },
+    '%x'  => fun (:$locale) { _compile_fmt(get_locale(date => $locale), locale => $locale); },
+    '%R'  => fun () {
         return $parser{'%H'}->(), qr/:/, $parser{'%M'}->();
     },
-    '%r' => fun (:$locale) { _compile_fmt(get_locale(time_ampm => $locale), locale => $locale); },
-    '%S' => fun () { qr"(?<S>[0-9][0-9])"; },
-    '%s' => fun () { qr"\s*(?<s>[0-9]+)"; },
-    '%T' => fun () {
+    '%r'  => fun (:$locale) { _compile_fmt(get_locale(time_ampm => $locale), locale => $locale); },
+    '%S'  => fun () { qr"(?<S>[0-9][0-9])"; },
+    '%-S' => fun () { qr"(?<S>[0-9][0-9]?)"; },
+    '%s'  => fun () { qr"\s*(?<s>[0-9]+)"; },
+    '%T'  => fun () {
         return $parser{'%H'}->(), qr/:/, $parser{'%M'}->(), qr/:/, $parser{'%S'}->();
     },
-    '%t' => fun () { qr"\s+"; },
-    '%U' => fun () { qr"(?<U>[0-9][0-9])"; },
-    '%u' => fun () { qr"(?<u>[0-9])"; },
-    '%V' => fun () { qr"(?<V>[0-9][0-9])"; },
-    '%v' => fun (:$locale) {
+    '%t'  => fun () { qr"\s+"; },
+    '%U'  => fun () { qr"(?<U>[0-9][0-9])"; },
+    '%-U' => fun () { qr"(?<U>[0-9][0-9]?)"; },
+    '%u'  => fun () { qr"(?<u>[0-9])"; },
+    '%V'  => fun () { qr"(?<V>[0-9][0-9])"; },
+    '%-V' => fun () { qr"(?<V>[0-9][0-9]?)"; },
+    '%v'  => fun (:$locale) {
         return $parser{'%e'}->(), qr/-/, $parser{'%b'}->(locale => $locale), qr/-/, $parser{'%Y'}->()
     },
-    '%W' => fun () { qr"(?<W>[0-9][0-9])"; },
-    '%w' => fun () { qr"(?<w>[0-9])"; },
-    '%Y' => fun () { qr"(?<Y>[0-9]{1,4})"; },
-    '%y' => fun () { qr"(?<y>[0-9][0-9])"; },
-    '%Z' => fun () { qr"(?<Z>\S+)"; },
-    '%z' => fun () { qr"(?<z>[-+][0-9][0-9](?::?[0-9][0-9])?)"; },
-    '%%' => fun () { qr"%"; },
+    '%W'  => fun () { qr"(?<W>[0-9][0-9])"; },
+    '%-W' => fun () { qr"(?<W>[0-9][0-9]?)"; },
+    '%w'  => fun () { qr"(?<w>[0-9])"; },
+    '%Y'  => fun () { qr"(?<Y>[0-9]{4})"; },
+    '%-Y' => fun () { qr"(?<Y>[0-9]{1,4})"; },
+    '%y'  => fun () { qr"(?<y>[0-9][0-9])"; },
+    '%-y' => fun () { qr"(?<y>[0-9][0-9]?)"; },
+    '%Z'  => fun () { qr"(?<Z>\S+)"; },
+    '%z'  => fun () { qr"(?<z>[-+][0-9][0-9](?::?[0-9][0-9])?)"; },
+    '%%'  => fun () { qr"%"; },
 );
 
 =head2 strptime
@@ -331,7 +349,11 @@ __END__
 
 =head1 Format Specifiers
 
-The format specifiers work in a format to parse distinct portions of a string. Any part of the format that isn't a format specifier will be matched verbatim. All format specifiers start with a C<%> character. Some implementations of C<strptime> will support some of them, and other implementations will support others. This implementation will support the ones described below:
+The format specifiers work in a format to parse distinct portions of a string. Any part of the format that isn't a format specifier will be matched verbatim. All format specifiers start with a C<%> character. Some implementations of C<strptime> will support some of them, and other implementations will support others.
+
+Some format specifiers can have a C<-> inserted between the C<%> and the letter, and if so they will no longer need any leading whitespace or C<0> to be matched. The ones which support this are: C<%-C>, C<%-d>, C<%-e>, C<%-G>, C<%-g>, C<%-H>, C<%-I>, C<%-j>, C<%-k>, C<%-l>, C<%-M>, C<%-m>, C<%-S>, C<%-U>, C<%-V>, C<%-W>, C<%-Y>, and C<%-y>.
+
+This implementation will support the ones described below:
 
 =over
 
@@ -353,7 +375,9 @@ Abbreviated month name, depending on the locale, e.g. C<okt>.
 
 =item C<%C>
 
-2 digit century, e.g. C<20>.
+2 digit century, e.g. C<20> - C<20> actually means the C<21st> century.
+
+If you specify C<%-C>, it will be 1 or 2 digits if the century is low enough.
 
 =item C<%c>
 
@@ -361,15 +385,19 @@ The date and time representation for the current locale, e.g. C<sön okt 30 16:0
 
 =item C<%D>
 
-Equivalent to C<%m/%d/%y>, e.g. C<10/30/16>.
+Equivalent to C<%m/%d/%y>, e.g. C<10/30/16> - this is used mostly in the US. Internationally C<%F> is much preferred.
 
 =item C<%d>
 
 2 digit day of month, e.g. C<30>.
 
+If you specify C<%-d>, it will be 1 or 2 digits if the day of the month is low enough.
+
 =item C<%e>
 
-1/2 digit day of month, possibly space padded, e.g. C<30>.
+1/2 digit day of month, space padded, e.g. C<30>.
+
+If you specify C<%-e>, it will not be space padded if it is low enough.
 
 =item C<%F>
 
@@ -377,15 +405,21 @@ Equivalent to C<%Y-%m-%d>, e.g. C<2016-10-30>.
 
 =item C<%G>
 
-Year, 1-4 digits, representing the week-based year since year 0, e.g. C<2016>.
+Year, 4 digits, representing the week-based year since year 0, e.g. C<2016> - i.e. if the date being represented has a week that overlaps with the previous or next year, the year for any date in that week will count as the year that has 4 or more days of the week in it, counting from Monday til Sunday. Should be combined with a C<%V> week specifier (a C<%W> or C<%U> week specifier will not work).
+
+If you specify C<%-G>, it will be 1, 2, 3, or 4 digits if the year is low enough.
 
 =item C<%g>
 
-2 digit week-based year without century, which will be interpreted as being within 50 years of the current year, whether that means adding 1900 or 2000 to it, e.g. C<16>.
+Like C<%G> but without century, and which will be interpreted as being within 50 years of the current year, whether that means adding 1900 or 2000 to it, e.g. C<16>.
+
+If you specify C<%-g>, it will be 1 or 2 digits if the year is low enough.
 
 =item C<%H>
 
 2 digit hour in 24-hour time, e.g. C<16>.
+
+If you specify C<%-H>, it will be 1 or 2 digits if the hour is low enough.
 
 =item C<%h>
 
@@ -395,29 +429,41 @@ Equivalent to C<%b>, e.g. C<okt>.
 
 2 digit hour in 12-hour time, e.g. C<04>.
 
+If you specify C<%-I>, it will be 1 or 2 digits if the hour is low enough.
+
 =item C<%j>
 
 3 digit day of the year, e.g. C<304>.
 
+If you specify C<%-j>, it will be 1, 2, or 3 digits if the day of the year is low enough.
+
 =item C<%k>
 
-1/2 digit hour in 24-hour time, e.g. C<16>.
+1/2 digit hour in 24-hour time, space padded, e.g. C<16>.
+
+If you specify C<%-k>, it will not be space padded if it is low enough.
 
 =item C<%l>
 
-1/2 digit hour in 12-hour time, possibly space padded, e.g. C< 4>.
+1/2 digit hour in 12-hour time, space padded, e.g. C< 4>.
+
+If you specify C<%-l>, it will not be space padded if it is low enough.
 
 =item C<%M>
 
 2 digit minute, e.g. C<07>.
 
+If you specify C<%-M>, it will be 1 or 2 digits if the minute is low enough.
+
 =item C<%m>
 
 2 digit month, e.g. C<10>.
 
+If you specify C<%-m>, it will be 1 or 2 digits if the month is low enough.
+
 =item C<%n>
 
-Arbitrary whitespace, like C<m/\s+/>.
+Arbitrary whitespace, like C<m/\s+/> - if used as a formatting specifier rather than a parsing specifier, it will result in a C<\n> (i.e. a newline).
 
 =item C<%p>
 
@@ -443,6 +489,8 @@ The time representation with am/pm for the current locale. For example in the C<
 
 2 digit second, e.g. C<34>.
 
+If you specify C<%-S>, it will be 1 or 2 digits if the second is low enough.
+
 =item C<%s>
 
 The epoch, i.e. the number of seconds since C<1970-01-01T00:00:00Z>.
@@ -453,11 +501,13 @@ Equivalent to C<%H:%M:%S>, e.g. C<16:07:34>.
 
 =item C<%t>
 
-Arbitrary whitespace, like C<m/\s+/>.
+Arbitrary whitespace, like C<m/\s+/> - if uses as a formatting specifier rather than a parsing specifier, it will result in a C<\t> (i.e. a tab).
 
 =item C<%U>
 
 2 digit week number of the year, Sunday-based week, e.g. C<44>.
+
+If you specify C<%-U>, it will be 1 or 2 digits if the week is low enough.
 
 =item C<%u>
 
@@ -465,7 +515,9 @@ Arbitrary whitespace, like C<m/\s+/>.
 
 =item C<%V>
 
-2 digit week number of the year, Monday-based week, e.g. C<43>.
+2 digit week number of the year, Monday-based week, e.g. C<43>, where week C<1> is the first week of the year that has 4 days or more. Any preceding days will belong to the last week of the prior year, see C<%G>.
+
+If you specify C<%-V>, it will be 1 or 2 digits if the week is low enough.
 
 =item C<%v>
 
@@ -475,17 +527,23 @@ Equivalent to C<%e-%b-%Y>, which depends on the locale, e.g. C<30-okt-2016>.
 
 2 digit week number of the year, Monday-based week, e.g. C<43>.
 
+If you specify C<%-W>, it will be 1 or 2 digits if the week is low enough.
+
 =item C<%w>
 
 1 digit weekday, Sunday-based week, e.g. C<0>.
 
 =item C<%Y>
 
-Year, 1-4 digits, representing the full year since year 0, e.g. C<2016>.
+Year, 4 digits, representing the full year since year 0, e.g. C<2016>.
+
+If you specify C<%-Y>, it will be from 1 to 4 digits if the year is low enough.
 
 =item C<%y>
 
 2 digit year without century, which will be interpreted as being within 50 years of the current year, whether that means adding 1900 or 2000 to it, e.g. C<16>.
+
+If you specify C<%-y>, it will be 1 or 2 digits if the year is low enough.
 
 =item C<%Z>
 

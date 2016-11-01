@@ -22,10 +22,7 @@ fun get_fmt_tok ($fmt, $pos) {
 
     my $tok = substr $fmt, $pos, $tok_len;
 
-    while ($tok eq '%-') {
-        $tok = '%' . substr($fmt, $pos + $tok_len, 1); $tok_len++;
-    }
-    if (($tok eq '%O') or ($tok eq '%E')) {
+    while (($tok eq '%O') or ($tok eq '%E') or ($tok eq '%-')) {
         $tok .= substr($fmt, $pos + $tok_len, 1); $tok_len++;
     }
 
