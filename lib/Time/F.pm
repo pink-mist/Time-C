@@ -19,7 +19,7 @@ our @EXPORT = qw/ strftime /;
   use feature 'say';
 
   # "mån 31 okt 2016 14:21:57"
-  say strftime(Time::C->now_utf(), "%c", locale => "sv_SE");
+  say strftime(Time::C->now_utc(), "%c", locale => "sv_SE");
 
 =head1 DESCRIPTION
 
