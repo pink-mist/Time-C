@@ -18,6 +18,7 @@ use Time::C::Sentinel;
 =head1 SYNOPSIS
 
   use Time::D;
+  use Time::C;
   use feature 'say';
 
   # "1 hour ago"
@@ -27,7 +28,7 @@ use Time::C::Sentinel;
   say Time::D->new(time)->to_string();
 
   my $d = Time::D->new(time);
-  $d->comp(Time::C->from_string("2000-01-01T00:00:00Z"));
+  $d->comp(Time::C->from_string("2000-01-01T00:00:00Z")->epoch);
 
   # "16 years, 8 months, 4 weeks, 20 hours, 6 minutes, and 3 seconds ago" (at the time of writing)
   say $d->to_string();
@@ -36,7 +37,7 @@ use Time::C::Sentinel;
   $d->years = 0;
 
   # "7 months, and 4 weeks ago"
-  $d->months++;
+  $d->months--;
 
   # "2016-02-01T00:00:00Z"
   say Time::C->gmtime($d->comp)->string;
