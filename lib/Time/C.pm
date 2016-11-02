@@ -259,7 +259,7 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
             if (defined $wday) { $t->day_of_week = $wday; }
             else { $t->{wday} = 0; }
         } elsif (defined $yday) {
-            $t = Time::C->new($year)->day($yday);
+            $t = Time::C->new($year)->day_of_year($yday);
         } else { # we have neither month, week, or day of year!
             $t = Time::C->new($year);
         }
@@ -295,7 +295,7 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
             if (defined $minute) { $t->minute = $minute; }
             if (defined $second) { $t->second = $second; }
         } elsif (defined $yday) {
-            $t = Time::C->new($year)->day($yday);
+            $t = Time::C->new($year)->day_of_year($yday);
 
             # Now add the time bits on top...
             if (defined $hour) { $t->hour = $hour; }
@@ -305,6 +305,11 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
             # We have neither year, month, week, or day of year ...
             # So let's just make a time for today's date
             $t = Time::C->now($tz)->second_of_day(0)->tz('UTC', 1);
+
+            # Mark these as being undefined
+            $t->{epoch_d} = $t->{tz_d} = $t->{offset} = $t->{year} =
+              $t->{month} = $t->{mday} = $t->{week} = $t->{wday} = $t->{yday} =
+              $t->{hour} = $t->{minute} = $t->{second} = 0;
 
             croak "Could not mktime: No date specified and no time given."
               if not defined $hour and not defined $minute and not defined $second;
