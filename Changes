@@ -1,4 +1,6 @@
 {{$NEXT}}
+  - Fix bug in Time::C->mktime where it would think things that weren't defined
+    yet were if no date part was given.
 
 0.021     2016-11-02 11:54:43+01:00 Europe/Stockholm
   - Change how strptime in Time::P works; it now returns a list of key-value
