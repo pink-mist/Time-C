@@ -114,7 +114,7 @@ method new ($c: $year = undef, $month = 1, $day = 1, $hour = 0, $minute = 0, $se
 =head2 mktime
 
   my $t = Time::C->mktime(
-    epoch => epoch,
+    epoch => $epoch,
     second => $second,
     minute => $minute,
     hour => $hour,

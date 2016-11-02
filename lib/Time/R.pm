@@ -68,35 +68,35 @@ Creates a Time::R object starting at C<$start>, and optionally ending at C<$end>
 
 This should be a L<Time::C> object representing the starting time.
 
-=item C<$end>
+=item C<< end => $end >>
 
 This should be a L<Time::C> object optionally specifying the ending time. Defaults to C<undef>.
 
-=item C<$years>
+=item C<< years => $years >>
 
 This should be the number of years between each recurrence. Defaults to C<0>.
 
-=item C<$months>
+=item C<< months => $months >>
 
 This should be the number of months between each recurrence. Defaults to C<0>.
 
-=item C<$weeks>
+=item C<< weeks => $weeks >>
 
 This should be the number of weeks between each recurrence. Defaults to C<0>.
 
-=item C<$days>
+=item C<< days => $days >>
 
 This should be the number of days between each recurrence. Defaults to C<0>.
 
-=item C<$hours>
+=item C<< hours => $hours >>
 
 This should be the number of hours between each recurrence. Defaults to C<0>.
 
-=item C<$minutes>
+=item C<< minutes => $minutes >>
 
 This should be the number of minutes between each recurrence. Defaults to C<0>.
 
-=item C<$seconds>
+=item C<< seconds => $seconds >>
 
 This should be the number of seconds between each recurrence. Defaults to C<0>.
 
