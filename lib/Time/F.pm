@@ -63,6 +63,71 @@ my %formatter; %formatter = (
     '%m'  => fun ($t, $l) { sprintf '%02d', $t->month; },
     '%-m' => fun ($t, $l) { $t->month; },
     '%n'  => fun ($t, $l) { "\n"; },
+    '%Od' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%d'}->($t, $l);
+        return @d ? $d[$n] : $n;
+    },
+    '%Oe' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%e'}->($t, $l);
+        return @d ? $d[$n] : $n;
+    },
+    '%OH' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%H'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%OI' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%I'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%Om' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%m'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%OM' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%M'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%OS' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%S'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%OU' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%U'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%Ou' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%u'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%OV' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%V'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%OW' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%W'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%Ow' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%w'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
+    '%Oy' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%y'}->($t, $l);
+        return @d > 31 ? $d[$n] : $n;
+    },
     '%p'  => fun ($t, $l) { get_locale(am_pm => $l)->[not $t->hour < 12]; },
     '%X'  => fun ($t, $l) { strftime($t, get_locale(time => $l), locale => $l); },
     '%x'  => fun ($t, $l) { strftime($t, get_locale(date => $l), locale => $l); },
