@@ -8,6 +8,7 @@ use Carp qw/ croak /;
 use Exporter qw/ import /;
 use Function::Parameters;
 use Data::Munge qw/ list2re /;
+use List::Util qw/ uniq /;
 
 use Time::C::Util qw/ get_fmt_tok get_locale /;
 
@@ -60,6 +61,30 @@ my %parser; %parser = (
     },
     '%d'  => fun () { qr"(?<d>[0-9][0-9])"; },
     '%-d' => fun () { qr"(?<d>[0-9][0-9]?)"; },
+    '%EC' => fun (:$locale) {
+        my @eras = _get_eras(period => $locale);
+        return $parser{'%C'}->() if not @eras;
+        my $re = list2re(@eras);
+        return qr"(?<EC>$re)";
+    },
+    '%Ec' => fun (:$locale) { _compile_fmt(get_locale(era_datetime => $locale), locale => $locale); },
+    '%EX' => fun (:$locale) { _compile_fmt(get_locale(era_time => $locale), locale => $locale); },
+    '%Ex' => fun (:$locale) { _compile_fmt(get_locale(era_date => $locale), locale => $locale); },
+    '%EY' => fun (:$locale) {
+        my @eras = _get_eras(full => $locale);
+        return $parser{'%Y'}->() if not @eras;
+
+        my @ret = map {
+              my @res = _compile_fmt($_, locale => $locale);
+              my $ret = shift @res;
+              foreach my $re (@res) { $ret = qr/$ret$re/; }
+              $ret;
+          } uniq @eras;
+        my $full_re = shift @ret;
+        foreach my $re (@ret) { $full_re = qr/$full_re|$re/; }
+        return $full_re;
+    },
+    '%Ey' => fun () { qr"(?<Ey>[0-9]+)"; },
     '%e'  => fun () { qr"(?:\s(?<e>[0-9])|(?<e>[0-9][0-9]))"; },
     '%-e' => fun () { qr"(?<e>[0-9][0-9]?)"; },
     '%F'  => fun () {
@@ -85,6 +110,84 @@ my %parser; %parser = (
     '%m'  => fun () { qr"(?<m>[0-9][0-9])"; },
     '%-m' => fun () { qr"(?<m>[0-9][0-9]?)"; },
     '%n'  => fun () { qr"\s+"; },
+    '%Od' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%d'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<Od>$re)";
+    },
+    '%Oe' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%e'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<Oe>$re)";
+    },
+    '%OH' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%H'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<OH>$re)";
+    },
+    '%OI' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%I'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<OI>$re)";
+    },
+    '%OM' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%M'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<OM>$re)";
+    },
+    '%Om' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%m'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<Om>$re)";
+    },
+    '%OS' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%S'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<OS>$re)";
+    },
+    '%OU' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%U'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<OU>$re)";
+    },
+    '%Ou' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%u'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<Ou>$re)";
+    },
+    '%OV' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%V'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<OV>$re)";
+    },
+    '%OW' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%W'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<OW>$re)";
+    },
+    '%Ow' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%w'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<Ow>$re)";
+    },
+    '%Oy' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%y'}->() if not @d;
+        my $re = list2re(@d);
+        return qr"(?<Oy>$re)";
+    },
     '%p'  => fun (:$locale) {
         my @am_pm = @{ get_locale(am_pm => $locale) };
         return () unless @am_pm;
@@ -207,15 +310,22 @@ fun _compile_fmt ($fmt, :$locale) {
     return @res;
 }
 
-fun _coerce_struct ($struct, $orig, :$locale) {
-    # First, if we know the epoch, great
-    my $epoch = $struct->{'s'};
+fun _get_mday ($struct, :$locale) {
+    my $mday = $struct->{'d'};
+    if (not defined $mday) { $mday = $struct->{'e'}; }
+    if (not defined $mday and defined(my $Od = $struct->{Od})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $mday = _get_index($Od, @d);
+    }
+    if (not defined $mday and defined(my $Oe = $struct->{Oe})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $mday = _get_index($Oe, @d);
+    }
 
-    # Then set up as many date bits we know about
-    #  year + day of year
-    #  year + month + day of month
-    #  year + week + day of week
+    return $mday;
+}
 
+fun _get_year ($struct, :$locale) {
     my $wyear = 0;
     my $year = $struct->{'Y'};
     if (not defined $year) {
@@ -240,25 +350,54 @@ fun _coerce_struct ($struct, $orig, :$locale) {
             $wyear = 1;
         }
     }
+    if (not defined $year) {
+        my $Ey = $struct->{Ey};
+        my $EC = $struct->{EC};
 
-    my $yday = $struct->{'j'};
+        if (defined $EC) {
+            my @eras = @{ get_locale(era => $locale) };
+            foreach my $era (@eras) {
+                my @fields = split /:/, $era;
+                next if $EC ne $fields[4];
 
-    my $month = $struct->{'m'};
-    if (not defined $month) {
-        if (defined $struct->{'B'}) {
-            $month = _get_index($struct->{'B'}, @{ get_locale(months => $locale) }) + 1;
-        } elsif (defined $struct->{'b'}) {
-            $month = _get_index($struct->{'b'}, @{ get_locale(months_abbr => $locale) }) + 1;
-        } 
+                my %s = strptime($fields[2], "%Y/%m/%d");
+                $year = $s{year};
+                $year += $Ey - $fields[1] if defined $Ey;
+                $year-- if not defined $Ey;
+                last;
+            }
+        } elsif (defined $Ey) {
+            my @eras = @{ get_locale(era => $locale) };
+            foreach my $era (@eras) {
+                my @fields = split /:/, $era;
+
+                my %s = strptime($fields[2], "%Y/%m/%d");
+                require Time::C;
+                next if $s{year} > Time::C->now_utc()->year;
+
+                $year = $s{year} + $Ey - $fields[1];
+                last;
+            }
+        }
+    }
+    if (not defined $year and defined(my $Oy = $struct->{Oy})) {
+        my @d = @{ get_locale(digits => $locale) };
+        if (defined(my $C = $struct->{C})) {
+            $year = $C * 100;
+        } else {
+            $year = 1900;
+        }
+        $year += _get_index($Oy, @d);
+        if (not defined $struct->{C}) {
+            require Time::C;
+            if ($year < (Time::C->now_utc()->year - 50)) { $year += 100; }
+        }
     }
 
-    my $mday = $struct->{'d'};
-    if (not defined $mday) { $mday = $struct->{'e'}; }
+    return ($year, $wyear);
+}
 
-    my $u_week = $struct->{'U'};
-    my $w_week = $struct->{'W'};
-    my $v_week = $struct->{'V'};
-
+fun _get_wday($struct, :$locale) {
     my $wday = $struct->{'u'} // $struct->{'w'};
 
     if (not defined $wday) {
@@ -268,7 +407,150 @@ fun _coerce_struct ($struct, $orig, :$locale) {
             $wday = _get_index($struct->{'a'}, @{ get_locale(weekdays_abbr => $locale) });
         }
     }
+    if (not defined $wday) {
+        if (defined(my $Ou = $struct->{Ou})) {
+            my @d = @{ get_locale(digits => $locale) };
+            $wday = _get_index($Ou, @d);
+        } elsif (defined(my $Ow = $struct->{Ow})) {
+            my @d = @{ get_locale(digits => $locale) };
+            $wday = _get_index($Ow, @d);
+        }
+    }
     $wday = 7 if defined $wday and $wday == 0;
+
+    return $wday;
+}
+
+fun _get_u_week ($struct, :$locale) {
+    my $u_week = $struct->{U};
+
+    if (not defined $u_week and defined(my $OU = $struct->{OU})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $u_week = _get_index($OU, @d);
+    }
+
+    return $u_week;
+}
+
+fun _get_w_week ($struct, :$locale) {
+    my $w_week = $struct->{W};
+
+    if (not defined $w_week and defined(my $OW = $struct->{OW})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $w_week = _get_index($OW, @d);
+    }
+
+    return $w_week;
+}
+
+fun _get_v_week ($struct, :$locale) {
+    my $v_week = $struct->{V};
+
+    if (not defined $v_week and defined(my $OV = $struct->{OV})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $v_week = _get_index($OV, @d);
+    }
+
+    return $v_week;
+}
+
+fun _get_month ($struct, :$locale) {
+    my $month = $struct->{'m'};
+    if (not defined $month) {
+        if (defined $struct->{'B'}) {
+            $month = _get_index($struct->{'B'}, @{ get_locale(months => $locale) }) + 1;
+        } elsif (defined $struct->{'b'}) {
+            $month = _get_index($struct->{'b'}, @{ get_locale(months_abbr => $locale) }) + 1;
+        }
+    }
+    if (not defined $month and defined(my $Om = $struct->{Om})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $month = _get_index($Om, @d);
+    }
+
+    return $month;
+}
+
+fun _get_hour ($struct, :$locale) {
+    my $hour = $struct->{'H'};
+    if (not defined $hour) { $hour = $struct->{'k'}; }
+    if (not defined $hour) {
+        $hour = $struct->{'I'} // $struct->{'l'};
+        if (defined $hour and length $struct->{'p'}) {
+            if (_get_index($struct->{'p'}, @{ get_locale(am_pm => $locale) })) {
+                # PM
+                if ($hour < 12) { $hour += 12; }
+            } else {
+                # AM
+                if ($hour == 12) { $hour = 0; }
+            }
+        }
+    }
+
+    if (not defined $hour and defined(my $OH = $struct->{OH})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $hour = _get_index($OH, @d);
+    } elsif (not defined $hour and defined(my $OI = $struct->{OI})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $hour = _get_index($OI, @d);
+        if (length $struct->{p}) {
+            if (_get_index($struct->{p}, @{ get_locale(am_pm => $locale) })) {
+                # PM
+                if ($hour < 12) { $hour += 12; }
+            } else {
+                # AM
+                if ($hour == 12) { $hour = 0; }
+            }
+        }
+    }
+
+    return $hour;
+}
+
+fun _get_minute ($struct, :$locale) {
+    my $min = $struct->{'M'};
+
+    if (not defined $min and defined(my $OM = $struct->{OM})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $min = _get_index($OM, @d);
+    }
+
+    return $min;
+}
+
+fun _get_second ($struct, :$locale) {
+    my $sec = $struct->{'S'};
+
+    if (not defined $sec and defined(my $OS = $struct->{OS})) {
+        my @d = @{ get_locale(digits => $locale) };
+        $sec = _get_index($OS, @d);
+    }
+
+    return $sec;
+}
+
+fun _coerce_struct ($struct, $orig, :$locale) {
+    # First, if we know the epoch, great
+    my $epoch = $struct->{'s'};
+
+    # Then set up as many date bits we know about
+    #  year + day of year
+    #  year + month + day of month
+    #  year + week + day of week
+
+    my ($year, $wyear) = _get_year($struct, locale => $locale);
+
+    my $yday = $struct->{'j'};
+
+    my $month = _get_month($struct, locale => $locale);
+
+    my $mday = _get_mday($struct, locale => $locale);
+
+    my $u_week = _get_u_week($struct, locale => $locale);
+    my $w_week = _get_w_week($struct, locale => $locale);
+    my $v_week = _get_v_week($struct, locale => $locale);
+
+    my $wday = _get_wday($struct, locale => $locale);
 
     if (not defined $w_week and defined $u_week) {
         $w_week = $u_week;
@@ -302,24 +584,11 @@ fun _coerce_struct ($struct, $orig, :$locale) {
 
     # Next try to set up time bits -- these are pretty easy in comparison
 
-    my $hour = $struct->{'H'};
-    if (not defined $hour) { $hour = $struct->{'k'}; }
-    if (not defined $hour) {
-        $hour = $struct->{'I'} // $struct->{'l'};
-        if (defined $hour and length $struct->{'p'}) {
-            if (_get_index($struct->{'p'}, @{ get_locale(am_pm => $locale) })) {
-                # PM
-                if ($hour < 12) { $hour += 12; }
-            } else {
-                # AM
-                if ($hour == 12) { $hour = 0; }
-            }
-        }
-    }
+    my $hour = _get_hour($struct, locale => $locale);
 
-    my $min = $struct->{'M'};
+    my $min = _get_minute($struct, locale => $locale);
 
-    my $sec = $struct->{'S'};
+    my $sec = _get_second($struct, locale => $locale);
 
     # And last see if we have some timezone or at least offset info
 
@@ -363,6 +632,13 @@ fun _get_index ($needle, @haystack) {
         return $i if $haystack[$i] eq $needle;
     }
     croak "Could not find $needle in the list.";
+}
+
+fun _get_eras ($type, $locale) {
+    my @eras = @{ get_locale(era => $locale) };
+    my @ret = map { my @fields = split /:/; $type eq 'period' ? $fields[4] : $fields[5] } @eras;
+
+    return @ret;
 }
 
 1;
