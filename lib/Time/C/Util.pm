@@ -57,6 +57,16 @@ fun get_locale($type, $locale) {
         $ret = $loc_db->{t_fmt}->{$locale};
     } elsif ($type eq 'time_ampm') {
         $ret = $loc_db->{r_fmt}->{$locale};
+    } elsif ($type eq 'era') {
+        $ret = $loc_db->{era}->{$locale} // [];
+    } elsif ($type eq 'era_datetime') {
+        $ret = $loc_db->{era_d_t_fmt}->{$locale} // $loc_db->{d_t_fmt}->{$locale};
+    } elsif ($type eq 'era_time') {
+        $ret = $loc_db->{era_t_fmt}->{$locale} // $loc_db->{t_fmt}->{$locale};
+    } elsif ($type eq 'era_date') {
+        $ret = $loc_db->{era_d_fmt}->{$locale} // $loc_db->{d_fmt}->{$locale};
+    } elsif ($type eq 'digits') {
+        $ret = $loc_db->{alt_digits}->{$locale} // [];
     } else { croak "Unknown locale type: $type."; }
 
     croak "Value for locale type $type in locale $locale is undefined."
