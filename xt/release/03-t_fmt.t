@@ -75,7 +75,7 @@ qw/ aa_ET aa_ER@saaho aa_ER aa_DJ /,
 		skip "Could not strftime.", 1 if not defined $str;
 
     note encode 'UTF-8', "$l => $str";
-    my $p = eval { strptime($str, "%X", locale => $l); };
+    my $p = eval { Time::C->strptime($str, "%X", locale => $l); };
 
     if (defined $p) {
         cmp_ok ($p->epoch - $t->epoch, '>=', '-60', "$l => Correct time calculated!") or

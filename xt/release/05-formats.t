@@ -16,7 +16,7 @@ foreach my $fmt (qw/ %C-%y %Y %y %G-%V-%w %g-%V-%w /) {
     my $t = Time::C->new($year)->day_of_year(1)->second_of_day(0);
     my $str = strftime($t, $fmt);
     note $str;
-    my $t2 = strptime($str, $fmt);
+    my $t2 = Time::C->strptime($str, $fmt);
 
     is ($t2, $t, "Format $fmt processed correctly");
 }
@@ -37,7 +37,7 @@ foreach my $sec (qw/
         my $format = "%Y: $fmt";
         my $str = strftime($t, $format);
         note $str;
-        my $t2 = strptime($str, $format);
+        my $t2 = Time::C->strptime($str, $format);
         my $str2 = strftime($t2, $format);
 
         is ($str2, $str, "Format $fmt processed correctly") or diag "$t -> ($fmt) -> $str -> $t2";
@@ -50,7 +50,7 @@ foreach my $day (1 .. 366) {
         my $t = Time::C->new($year)->day_of_year($day)->second_of_day(0);
         my $str = strftime($t, $fmt);
         note $str;
-        my $t2 = strptime($str, $fmt);
+        my $t2 = Time::C->strptime($str, $fmt);
         
         is ($t2, $t, "Format $fmt processed correctly");
     }
@@ -60,7 +60,7 @@ foreach my $day (1 .. 366) {
         my $format = "%Y: $fmt";
         my $str = strftime($t, $format);
         note $str;
-        my $t2 = strptime($str, $format);
+        my $t2 = Time::C->strptime($str, $format);
 
         is ($t2, $t, "Format $fmt processed correctly") or diag "$t -> ($fmt) -> $str -> $t2";
     }
@@ -68,7 +68,7 @@ foreach my $day (1 .. 366) {
         my $t = Time::C->new($year)->day_of_year($day)->second_of_day(0);
         my $str = strftime($t, $fmt);
         note $str;
-        my $t2 = strptime($str, $fmt);
+        my $t2 = Time::C->strptime($str, $fmt);
 
         is ($t2, $t, "Format $fmt processed correctly") or diag "$t -> ($fmt) -> $str -> $t2";
     }
