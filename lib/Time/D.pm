@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package Time::D;
 
-# ABSTRACT: Differentiate between two times
+# ABSTRACT: Differentiate between two times.
 
 use overload (
     '""' => sub { shift->to_string(2); },
