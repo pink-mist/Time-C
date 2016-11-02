@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.022     2016-11-02 12:52:24+01:00 Europe/Stockholm
   - Fix bug in Time::C->mktime where it would think things that weren't defined
     yet were if no date part was given.
   - Fix bug in Time::C->strptime where it wouldn't do anything if the epoch was
