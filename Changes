@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.021     2016-11-02 11:54:43+01:00 Europe/Stockholm
   - Change how strptime in Time::P works; it now returns a list of key-value
     pairs of the data it was able to parse, suitable for passing to
     Time::C->mktime.
