@@ -40,7 +40,7 @@ foreach my $t (@ts) {
 $fmt = "%G: %V-%w";
 foreach my $t (@ts) {
     my $str = strftime $t, $fmt;
-    my $t2 = strptime $str, $fmt;
+    my $t2 = Time::C->strptime($str, $fmt);
 
     is ($t2, $t, "Week for $t parsed correctly.") or diag "$t => ($fmt) => $str => $t2";
 }
@@ -48,7 +48,7 @@ foreach my $t (@ts) {
 $fmt = "%Y: %W-%w";
 foreach my $t (@ts) {
     my $str = strftime $t, $fmt;
-    my $t2 = strptime $str, $fmt;
+    my $t2 = Time::C->strptime($str, $fmt);
 
     is ($t2, $t, "Week for $t parsed correctly.") or diag "$t => ($fmt) => $str => $t2";
 }

@@ -18,9 +18,10 @@ our @EXPORT = qw/ strptime /;
 =head1 SYNOPSIS
 
   use Time::P; # strptime() automatically exported.
+  use Time::C;
 
   # "2016-10-30T16:07:34Z"
-  my $t = strptime "sön okt 30 16:07:34 UTC 2016", "%a %b %d %T %Z %Y", locale => "sv_SE";
+  my $t = Time::C->mktime(strptime("sön okt 30 16:07:34 UTC 2016", "%a %b %d %T %Z %Y", locale => "sv_SE"));
 
 =head1 DESCRIPTION
 
@@ -125,10 +126,10 @@ my %parser; %parser = (
 
 =head2 strptime
 
-  my $t = strptime($str, $fmt);
-  my $t = strptime($str, $fmt, locale => $locale, strict => $strict);
+  my %struct = strptime($str, $fmt);
+  my %struct = strptime($str, $fmt, locale => $locale, strict => $strict, struct => \%struct);
 
-C<strptime> takes a string and a format, and tries to parse the string using the format to create a L<Time::C> object representing the time.
+C<strptime> takes a string and a format which it parses the string with, and returns key-value pairs of the parsed bits of time.
 
 =over
 
@@ -138,7 +139,7 @@ C<$str> is the string to parse.
 
 =item C<$fmt>
 
-C<$fmt> is the format specifier used to parse the C<$str>. If it can't match C<$str> to get a useful date/time it will throw an exception. See L<Format Specifiers> for details on the supported format specifiers.
+C<$fmt> is the format specifier used to parse the C<$str>. If it can't match C<$str> it will throw an exception. See L<Format Specifiers> for details on the supported format specifiers.
 
 =item C<< locale => $locale >>
 
@@ -148,22 +149,26 @@ C<$locale> is an optional parameter which defaults to C<C>. It is used to determ
 
 C<$strict> is an optional boolean flag which defaults to true. If it is a true value, the C<$fmt> must describe the string entirely. If it is false, the C<$fmt> may describe only part of the string, and any extra bits, either before or after, are discarded.
 
+=item C<< struct => \%struct >>
+
+If passed a reference to a hash C<%struct>, that hash will be updated with the bits that were parsed from the string. The hash will also be equal to the key-value pairs being returned. If it is not supplied, a reference to an empty hash will be used in its stead.
+
 =back
 
-If the format reads in a timezone that isn't well-defined, it will be silently ignored, and any offset that is parsed will be used instead. It uses L<Time::C/mktime> to create the C<Time::C> object from the parsed data.
+If the format reads in a timezone that isn't well-defined, it will be silently ignored, and any offset that is parsed will be used instead.
+
+See L<Time::C/mktime> for making a C<Time::C> object out of the returned structure. Or see L<Time::C/strptime> for a constructor that will do it for you.
 
 =cut
 
-fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1) {
-    require Time::C;
-
-    my %struct = ();
+fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1, :$struct = {}) {
+    my %parse = ();
 
     my @res = _compile_fmt($fmt, locale => $locale);
     @res = (qr/^/, @res, qr/$/) if $strict;
 
     while (@res and $str =~ m/\G$res[0]/gc) {
-        %struct = (%struct, %+);
+        %parse = (%parse, %+);
         shift @res;
     }
 
@@ -171,10 +176,9 @@ fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1) {
         croak sprintf "Could not match '%s' using '%s'. Match failed at position %d.", $str, $fmt, pos($str);
     }
 
-    %struct = _coerce_struct(\%struct, locale => $locale);
-    my $time = Time::C->mktime(%struct);
+    $struct = { %$struct, _coerce_struct(\%parse, $struct, locale => $locale) };
 
-    return $time;
+    return %$struct;
 }
 
 fun _compile_fmt ($fmt, :$locale) {
@@ -196,7 +200,7 @@ fun _compile_fmt ($fmt, :$locale) {
     return @res;
 }
 
-fun _coerce_struct ($struct, :$locale) {
+fun _coerce_struct ($struct, $orig, :$locale) {
     # First, if we know the epoch, great
     my $epoch = $struct->{'s'};
 
@@ -220,9 +224,11 @@ fun _coerce_struct ($struct, :$locale) {
             }
         } elsif (defined $struct->{'y'}) {
             $year = $struct->{'y'} + 1900;
+            require Time::C;
             if ($year < (Time::C->now_utc()->year - 50)) { $year += 100; }
         } elsif (defined $struct->{'g'}) {
             $year = $struct->{'g'} + 1900;
+            require Time::C;
             if ($year < (Time::C->now_utc()->year - 50)) { $year += 100; }
             $wyear = 1;
         }
@@ -266,16 +272,24 @@ fun _coerce_struct ($struct, :$locale) {
     if (not defined $v_week and defined $w_week) {
         if ($wyear) { croak "Can't strptime a %G/%g year with a %W/%U week"; }
 
-        my $t = Time::C->new($year // Time::C->now_utc->year);
+        require Time::C;
+        my $t = Time::C->new($year // $orig->{year} // Time::C->now_utc->year);
         $v_week = $w_week;
         if (($t->day_of_week > 1) and ($t->day_of_week < 5)) { $v_week++; }
     }
 
     if ($wyear and defined $v_week and $v_week > 1) {
+        require Time::C;
         $year = Time::C->mktime(year => $year, week => $v_week)->year;
-    } elsif (defined $v_week and $v_week > 1) {
+    } elsif (defined $v_week and $v_week > 1 and defined $year) {
+        require Time::C;
         if (Time::C->mktime(year => $year, week => $v_week)->year == $year + 1) {
             $year-- if not defined $month;
+        }
+    } elsif (defined $v_week and $v_week > 1 and defined $orig->{year}) {
+        require Time::C;
+        if (Time::C->mktime(year => $orig->{year}, week => $v_week)->year == $orig->{year} + 1) {
+            $year = $orig->{year} - 1 if not defined $month;
         }
     }
 
@@ -285,7 +299,7 @@ fun _coerce_struct ($struct, :$locale) {
     if (not defined $hour) { $hour = $struct->{'k'}; }
     if (not defined $hour) {
         $hour = $struct->{'I'} // $struct->{'l'};
-        if (defined $hour and defined $struct->{'p'}) {
+        if (defined $hour and length $struct->{'p'}) {
             if (_get_index($struct->{'p'}, @{ get_locale(am_pm => $locale) })) {
                 # PM
                 if ($hour < 12) { $hour += 12; }
@@ -304,6 +318,7 @@ fun _coerce_struct ($struct, :$locale) {
 
     my $tz = $struct->{'Z'}; # should verify that it's a useful tz
     if (defined $tz) {
+        require Time::C;
         undef $tz if not defined eval { Time::C->now($tz); };
     }
 
@@ -565,7 +580,7 @@ A literal C<%> sign.
 
 =item L<Time::C>
 
-The companion to this module, which represents the actual time we parsed.
+The companion to this module, which can create an actual time representation from the structure we parsed.
 
 =item L<Time::Piece>
 

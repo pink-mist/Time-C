@@ -96,10 +96,32 @@ This is the timezone specification such as C<Europe/Stockholm> or C<UTC>. If not
 
 =cut
 
-method new ($c: $year = undef, $month = 1, $day = 1, $hour = 0, $minute = 0, $second = 0, $tz = 'UTC') {
-    return $c->now_utc() if not defined $year;
+method new ($c: $year =, $month =, $day =, $hour =, $minute =, $second =, $tz =) {
+    my $t;
+    my %defineds = (
+        epoch_d => (defined($year) and defined($month) and defined($day) and defined($hour) and defined($minute) and defined($second)),
+        year => defined($year),
+        month => defined($month),
+        mday => defined($day),
+        week => 0,
+        wday => 0,
+        yday => 0,
+        hour => defined($hour),
+        minute => defined($minute),
+        second => defined($second),
+        tz_d => defined($tz),
+        offset => 0,
+    );
 
-    my $tm = Time::Moment->new(year => $year, month => $month, day => $day, hour => $hour, minute => $minute, second => $second, offset => 0);
+    if (not defined $year) {
+        $t = $c->now_utc();
+        %$t = ( %$t, %defineds );
+        return $t;
+    }
+
+    my $tm = Time::Moment->new(year => $year, month => $month // 1, day => $day // 1, hour => $hour // 0, minute => $minute // 0, second => $second // 0, offset => 0);
+
+    if (not defined $tz) { $tz = 'UTC'; }
 
     if ($tz ne 'UTC' and $tz ne 'GMT') {
         my $offset = _get_offset($tm->epoch, $tz);
@@ -108,7 +130,9 @@ method new ($c: $year = undef, $month = 1, $day = 1, $hour = 0, $minute = 0, $se
         $tm = $tm->with_offset_same_local($offset);
     }
 
-    $c->localtime($tm->epoch, $tz);
+    $t = $c->localtime($tm->epoch, $tz);
+    %$t = (%$t, %defineds);
+    return $t;
 }
 
 =head2 mktime
@@ -193,6 +217,20 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
     # Then go on to creating it from the date bits, and the time bits
 
     my $t;
+    my %defineds = (
+        epoch_d => defined($epoch),
+        year => defined($year),
+        month => defined($month),
+        mday => defined($mday),
+        week => defined($week),
+        wday => defined($wday),
+        yday => defined($yday),
+        hour => defined($hour),
+        minute => defined($minute),
+        second => defined($second),
+        tz_d => defined($tz),
+        offset => defined($offset),
+    );
 
     if (defined $epoch) {
         $t = Time::C->gmtime($epoch);
@@ -202,6 +240,8 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
         } elsif (defined $offset) {
             $t->offset = $offset;
         }
+
+        $t->{tz_d} = $defineds{tz_d};
 
         return $t;
     } elsif (defined $year) { # We have a year at least...
@@ -213,10 +253,11 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
             }
         } elsif (defined $week) {
             $t = Time::C->new($year);
-            $t->day++ while ($t->week > 1);
+            $t->day_of_week++ while ($t->week > 1);
             $t = $t->week($week)->day_of_week(1);
 
             if (defined $wday) { $t->day_of_week = $wday; }
+            else { $t->{wday} = 0; }
         } elsif (defined $yday) {
             $t = Time::C->new($year)->day($yday);
         } else { # we have neither month, week, or day of year!
@@ -243,9 +284,11 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
             if (defined $second) { $t->second = $second; }
         } elsif (defined $week) {
             $t = Time::C->new($year);
-            $t->day++ while ($t->week > 1);
+            $t->day_of_week++ while ($t->week > 1);
             $t = $t->week($week)->day_of_week(1);
+
             if (defined $wday) { $t->day_of_week = $wday; }
+            else { $t->{wday} = 0; }
 
             # Now add the time bits on top...
             if (defined $hour) { $t->hour = $hour; }
@@ -273,6 +316,7 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
             if (defined $minute) { $t->minute = $minute; } elsif (not defined $hour) { $t->second_of_day = Time::C->now($tz)->tz('UTC', 1)->second(0)->second_of_day; }
             if (defined $second) { $t->second = $second; }
         }
+        $t->{year} = 0;
     }
 
     # And last, adjust for timezone bits
@@ -280,7 +324,7 @@ method mktime ($c: :$epoch =, :$second =, :$minute =, :$hour =, :$mday =, :$mont
     if (defined $tz) {
         $t = $t->tz($tz, 1);
     } elsif (defined $offset) {
-        $t->tm = $t->tm->with_offset_same_local($offset);
+        $t->_tm = $t->tm->with_offset_same_local($offset);
         $t->offset = $offset;
     }
 
@@ -309,9 +353,23 @@ This is the timezone specification, such as C<Europe/Stockholm> or C<UTC>. If no
 =cut
 
 method localtime ($c: $epoch, $tz = $ENV{TZ}) {
+    my %defineds = (
+        epoch_d => 1,
+        year => 1,
+        month => 1,
+        mday => 1,
+        week => 1,
+        wday => 1,
+        yday => 1,
+        hour => 1,
+        minute => 1,
+        second => 1,
+        tz_d => defined($tz),
+        offset => 0,
+    );
     $tz = 'UTC' unless defined $tz;
     _verify_tz($tz);
-    bless {epoch => $epoch, tz => $tz}, $c;
+    bless {epoch => $epoch, tz => $tz, %defineds}, $c;
 }
 
 =head2 gmtime
@@ -398,9 +456,9 @@ If there is no valid timezone specified in the format, but C<$tz> is given and m
 =cut
 
 method from_string ($c: $str, :$format = undef, :$locale = 'C', :$strict = 1, :$tz = 'UTC') {
-    my @p = _parse($str, $format, $tz, locale => $locale, strict => $strict);
+    my %p = _parse($str, $format, $tz, locale => $locale, strict => $strict);
 
-    bless {epoch => $p[0], tz => $p[1]}, $c;
+    return $c->mktime(%p);
 }
 
 =head2 strptime
@@ -409,7 +467,13 @@ method from_string ($c: $str, :$format = undef, :$locale = 'C', :$strict = 1, :$
   my $t = Time::C->strptime($str, $format, locale => $locale);
   my $t = Time::C->strptime($str, $format, locale => $locale, strict => $strict);
 
+  $t = $t->strptime($str, $format);
+  $t = $t->strptime($str, $format, locale => $locale);
+  $t = $t->strptime($str, $format, locale => $locale, strict => $strict);
+
 Creates a Time::C object for the specified C<$str> using the C<$format> to parse it with L<Time::P/strptime>.
+
+This doesn't need to be used solely as a constructor; if it's called on an already existing C<Time::C> object, the values parsed from the C<$str> will be updated in the object, following the same rules as C<< Time::C->mktime >> for precedence (i.e. if an epoch is supplied, none of the other values matter, and if a month is supplied, the weeks and weekdays won't be considered, and so on).
 
 =over
 
@@ -434,7 +498,55 @@ Gives the C<$strict> parameter to L<Time::P/strptime>. Defaults to C<1>.
 =cut
 
 method strptime ($c: $str, $format, :$locale = 'C', :$strict = 1) {
-    return Time::P::strptime(@_);
+    my %struct;
+    if (ref $c) {
+        my $t = $c;
+        if ($t->{epoch_d}) { $struct{epoch} = $t->{epoch}; }
+        if ($t->{year}) { $struct{year} = $t->year; }
+        if ($t->{month}) { $struct{month} = $t->month; }
+        if ($t->{mday}) { $struct{mday} = $t->day; }
+        if ($t->{week}) { $struct{week} = $t->week; }
+        if ($t->{wday}) { $struct{wday} = $t->day_of_week; }
+        if ($t->{yday}) { $struct{yday} = $t->day_of_year; }
+        if ($t->{hour}) { $struct{hour} = $t->hour; }
+        if ($t->{minute}) { $struct{minute} = $t->minute; }
+        if ($t->{second}) { $struct{second} = $t->second; }
+        if ($t->{tz_d}) { $struct{tz} = $t->{tz}; }
+        if ($t->{offset}) { $struct{offset} = $t->offset; }
+    }
+    %struct = Time::P::strptime($str, $format, locale => $locale, strict => $strict, struct => \%struct);
+
+    if (ref $c) {
+        my $t = $c;
+
+        if (defined $struct{tz}) {
+            $t->tz = $struct{tz};
+        } elsif (defined $struct{offset}) {
+            $t->offset = $struct{offset};
+        }
+
+        if (defined $struct{epoch}) { return $t->epoch($struct{epoch}); }
+
+        if (defined $struct{year}) { $t->year = $struct{year}; }
+
+        if (defined $struct{month}) {
+            $t->month = $struct{month};
+            if (defined $struct{mday}) { $t->day = $struct{mday}; }
+        } elsif (defined $struct{week}) {
+            $t->week = $struct{week};
+            if (defined $struct{wday}) { $t->day_of_week = $struct{wday}; }
+        } elsif (defined $struct{yday}) {
+            $t->day_of_year = $struct{yday};
+        }
+
+        if (defined $struct{hour}) { $t->hour = $struct{hour}; }
+        if (defined $struct{minute}) { $t->minute = $struct{minute}; }
+        if (defined $struct{second}) { $t->second = $struct{second}; }
+
+        return $t;
+    } else {
+        return $c->mktime(%struct);
+    }
 }
 
 fun _verify_tz ($tz) {
@@ -486,8 +598,9 @@ fun _get_tz ($offset) {
 
 fun _parse ($str, $format = undef, $tz = 'UTC', :$locale = 'C', :$strict = 1) {
     if (defined $format) {
-        my $t = eval { Time::P::strptime($str, $format, locale => $locale, strict => $strict) };
-        return ($t->epoch, $t->tz) if defined $t;
+        my %struct = ();
+        my $e = eval { %struct = Time::P::strptime($str, $format, locale => $locale, strict => $strict); 1; };
+        return %struct if $e;
 
         croak sprintf "Could not parse %s using %s: %s", $str, $format, $@;
     }
@@ -498,10 +611,12 @@ fun _parse ($str, $format = undef, $tz = 'UTC', :$locale = 'C', :$strict = 1) {
     my $epoch = $tm->epoch;
     my $offset = $tm->offset;
 
-    $tz = _get_tz($offset) unless $offset ==
-      Time::Zone::Olson->new({timezone => $tz})->local_offset($epoch);
+    my @ret = (epoch => $epoch, offset => $offset);
+    if ($offset == Time::Zone::Olson->new({timezone => $tz})->local_offset($epoch)) {
+        push @ret, tz => $tz;
+    }
 
-    return $epoch, $tz;
+    return @ret;
 }
 
 =head1 ACCESSORS
@@ -533,6 +648,9 @@ method epoch ($t: $new_epoch = undef) :lvalue {
 
     my $setter = sub {
         $t->{epoch} = $_[0];
+
+        %$t = (%$t, epoch_d => 1, year => 1, yday => 1, month => 1, mday => 1, week => 1, wday => 1, hour => 1,  minute => 1, second => 1, );
+
         return $t if defined $new_epoch;
         return $_[0];
     };
@@ -564,10 +682,12 @@ method tz ($t: $new_tz = undef, $override = 0) :lvalue {
 
         if ($override) {
             my $l = Time::C->new($t->year, $t->month, $t->day, $t->hour, $t->minute, $t->second, $_[0]);
-            $t->epoch = $l->epoch;
+            $t->{epoch} = $l->epoch;
         }
 
         $t->{tz} = $_[0];
+        $t->{tz_d} = 1;
+
         return $t if defined $new_tz;
         return $t->{tz};
     };
@@ -612,6 +732,7 @@ If the form C<< $t->offset($new_offset) >> is used, it likewise sets the timezon
 method offset ($t: $new_offset = undef) :lvalue {
     my $setter = sub {
         $t->{tz} = _get_tz($_[0]);
+        $t->{offset} = 1;
 
         return $t if defined $new_offset;
         return $_[0];
@@ -638,6 +759,20 @@ If the form C<< $t->tm($new_tm) >> is used, it likewise changes the current epoc
 =cut
 
 method tm ($t: $new_tm = undef) :lvalue {
+    my $setter = sub {
+        $t->_tm = $_[0];
+        $t->epoch = $t->epoch; # update definedness values
+
+        return $t if defined $new_tm;
+        return $_[0];
+    };
+
+    return $setter->($new_tm) if defined $new_tm;
+
+    sentinel value => $t->_tm(), set => $setter;
+}
+
+method _tm ($t: $new_tm = undef) :lvalue {
     $t->{tz} = 'UTC' if not defined $t->{tz};
 
     my $setter = sub {
@@ -706,7 +841,31 @@ method string ($t: $new_str = undef, :$format = undef, :$locale = 'C', :$strict 
     $t->{tz} = 'UTC' if not defined $t->{tz};
 
     my $setter = sub {
-        @{$t}{epoch,tz} = _parse($_[0], $format, $t->{tz}, locale => $locale, strict => $strict);
+        my %struct = _parse($_[0], $format, $t->{tz}, locale => $locale, strict => $strict);
+
+        if (defined $struct{tz}) {
+            $t->tz = $struct{tz};
+        } elsif (defined $struct{offset}) {
+            $t->offset = $struct{offset};
+        }
+
+        if (defined $struct{epoch}) { return $t->epoch($struct{epoch}); }
+
+        if (defined $struct{year}) { $t->year = $struct{year}; }
+
+        if (defined $struct{month}) {
+            $t->month = $struct{month};
+            if (defined $struct{mday}) { $t->day = $struct{mday}; }
+        } elsif (defined $struct{week}) {
+            $t->week = $struct{week};
+            if (defined $struct{wday}) { $t->day_of_week = $struct{wday}; }
+        } elsif (defined $struct{yday}) {
+            $t->day_of_year = $struct{yday};
+        }
+
+        if (defined $struct{hour}) { $t->hour = $struct{hour}; }
+        if (defined $struct{minute}) { $t->minute = $struct{minute}; }
+        if (defined $struct{second}) { $t->second = $struct{second}; }
 
         return $t if defined $new_str;
         return $_[0];
@@ -754,7 +913,8 @@ method year ($t: $new_year = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->with_year($_[0]))->year;
+        my $ret = ($t->_tm = $tm->with_year($_[0]))->year;
+        $t->{year} = 1;
 
         return $t if defined $new_year;
         return $ret;
@@ -787,7 +947,8 @@ method quarter ($t: $new_quarter = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_months(3*$_[0] - $tm->month))->quarter;
+        my $ret = ($t->_tm = $tm->plus_months(3*$_[0] - $tm->month))->quarter;
+        $t->{month} = 1;
 
         return $t if defined $new_quarter;
         return $ret;
@@ -820,7 +981,8 @@ method month ($t: $new_month = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_months($_[0] - $tm->month))->month;
+        my $ret = ($t->_tm = $tm->plus_months($_[0] - $tm->month))->month;
+        $t->{month} = 1;
 
         return $t if defined $new_month;
         return $ret;
@@ -853,7 +1015,8 @@ method week ($t: $new_week = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_weeks($_[0] - $tm->week))->week;
+        my $ret = ($t->_tm = $tm->plus_weeks($_[0] - $tm->week))->week;
+        $t->{week} = 1;
 
         return $t if defined $new_week;
         return $ret;
@@ -894,7 +1057,8 @@ method day_of_month ($t: $new_day = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_month))->day_of_month;
+        my $ret = ($t->_tm = $tm->plus_days($_[0] - $tm->day_of_month))->day_of_month;
+        $t->{mday} = 1;
 
         return $t if defined $new_day;
         return $ret;
@@ -927,7 +1091,8 @@ method day_of_year ($t: $new_day = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_year))->day_of_year;
+        my $ret = ($t->_tm = $tm->plus_days($_[0] - $tm->day_of_year))->day_of_year;
+        $t->{yday} = 1;
 
         return $t if defined $new_day;
         return $ret;
@@ -960,7 +1125,8 @@ method day_of_quarter ($t: $new_day = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_quarter))->day_of_quarter;
+        my $ret = ($t->_tm = $tm->plus_days($_[0] - $tm->day_of_quarter))->day_of_quarter;
+        $t->{mday} = 1;
 
         return $t if defined $new_day;
         return $ret;
@@ -993,7 +1159,8 @@ method day_of_week ($t: $new_day = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_days($_[0] - $tm->day_of_week))->day_of_week;
+        my $ret = ($t->_tm = $tm->plus_days($_[0] - $tm->day_of_week))->day_of_week;
+        $t->{wday} = 1;
 
         return $t if defined $new_day;
         return $ret;
@@ -1026,7 +1193,8 @@ method hour ($t: $new_hour = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_hours($_[0] - $tm->hour))->hour;
+        my $ret = ($t->_tm = $tm->plus_hours($_[0] - $tm->hour))->hour;
+        $t->{hour} = 1;
 
         return $t if defined $new_hour;
         return $ret;
@@ -1059,7 +1227,8 @@ method minute ($t: $new_minute = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_minutes($_[0] - $tm->minute))->minute;
+        my $ret = ($t->_tm = $tm->plus_minutes($_[0] - $tm->minute))->minute;
+        $t->{minute} = 1;
 
         return $t if defined $new_minute;
         return $ret;
@@ -1092,7 +1261,8 @@ method second ($t: $new_second = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_seconds($_[0] - $tm->second))->second;
+        my $ret = ($t->_tm = $tm->plus_seconds($_[0] - $tm->second))->second;
+        $t->{second} = 1;
 
         return $t if defined $new_second;
         return $ret;
@@ -1125,7 +1295,8 @@ method second_of_day ($t: $new_second = undef) :lvalue {
     my $tm = $t->tm();
 
     my $setter = sub {
-        my $ret = ($t->tm = $tm->plus_seconds($_[0] - $tm->second_of_day))->second_of_day;
+        my $ret = ($t->_tm = $tm->plus_seconds($_[0] - $tm->second_of_day))->second_of_day;
+        $t->{second} = $t->{minute} = $t->{hour} = 1;
 
         return $t if defined $new_second;
         return $ret;
@@ -1170,7 +1341,8 @@ Returns a copy of C<$t1>.
 method clone($t:) {
     my $c = ref $t;
 
-    return $c->localtime($t->epoch, $t->tz);
+    my $t2 = { %$t };
+    bless $t2, $c;
 }
 
 1;

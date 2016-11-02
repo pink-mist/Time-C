@@ -73,7 +73,7 @@ my $str = strftime(Time::C->from_string("2016-10-31T14:21:57Z"), "%c", locale =>
 is ($str, "mån 31 okt 2016 14:21:57", "strftime works correctly");
 
 # and Time::P synopsis
-my $p = strptime "sön okt 30 16:07:34 UTC 2016", "%a %b %d %T %Z %Y", locale => "sv_SE";
+my $p = Time::C->mktime(strptime("sön okt 30 16:07:34 UTC 2016", "%a %b %d %T %Z %Y", locale => "sv_SE"));
 isa_ok($p, "Time::C");
 is ($p, "2016-10-30T16:07:34Z", "strptime works correctly");
 
