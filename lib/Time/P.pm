@@ -165,15 +165,19 @@ fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1, :$struct = {}) {
     my %parse = ();
 
     my @res = _compile_fmt($fmt, locale => $locale);
+
+    croak "Could not match '%s' using '%s'.", $str, $fmt if not @res;
+
     @res = (qr/^/, @res, qr/$/) if $strict;
 
-    while (@res and $str =~ m/\G$res[0]/gc) {
+    my $re;
+    while (defined ($re = shift @res) and $str =~ m/\G$re/gc) {
+        warn "matched with $re\n" if DEBUG;
         %parse = (%parse, %+);
-        shift @res;
     }
 
     if (@res) {
-        croak sprintf "Could not match '%s' using '%s'. Match failed at position %d.", $str, $fmt, pos($str);
+        croak sprintf "Could not match '%s' using '%s'. Match failed at position %d while trying to match with %s.", $str, $fmt, pos($str), $re;
     }
 
     $struct = { %$struct, _coerce_struct(\%parse, $struct, locale => $locale) };
@@ -189,7 +193,9 @@ fun _compile_fmt ($fmt, :$locale) {
     # _get_tok will increment $pos for us
     while (defined(my $tok = get_fmt_tok($fmt, $pos))) {
         if (exists $parser{$tok}) {
-            push @res, $parser{$tok}->(locale => $locale);
+            my $re = $parser{$tok}->(locale => $locale);
+            warn "pushing $re to list\n" if DEBUG;
+            push @res, $re;
         } elsif ($tok =~ /^%/) {
             croak "Unsupported format specifier: $tok";
         } else {
@@ -197,6 +203,7 @@ fun _compile_fmt ($fmt, :$locale) {
         }
     }
 
+    warn "returning @res\n" if DEBUG;
     return @res;
 }
 
