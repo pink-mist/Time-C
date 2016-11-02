@@ -506,7 +506,6 @@ method strptime ($c: $str, $format, :$locale = 'C', :$strict = 1) {
     my %struct;
     if (ref $c) {
         my $t = $c;
-        if ($t->{epoch_d}) { $struct{epoch} = $t->{epoch}; }
         if ($t->{year}) { $struct{year} = $t->year; }
         if ($t->{month}) { $struct{month} = $t->month; }
         if ($t->{mday}) { $struct{mday} = $t->day; }
