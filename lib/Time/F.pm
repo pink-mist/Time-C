@@ -9,6 +9,7 @@ use Exporter qw/ import /;
 use Function::Parameters qw/ :strict /;
 
 use Time::C::Util qw/ get_fmt_tok get_locale /;
+use Time::P;
 
 our @EXPORT = qw/ strftime /;
 
@@ -40,6 +41,12 @@ my %formatter; %formatter = (
     '%D'  => fun ($t, $l) { strftime($t, '%m/%d/%y', locale => $l); },
     '%d'  => fun ($t, $l) { sprintf '%02d', $t->day; },
     '%-d' => fun ($t, $l) { $t->day; },
+    '%EC' => fun ($t, $l) { strftime($t, _fmt_era(C => $t, get_locale(era => $l)), locale => $l); },
+    '%Ec' => fun ($t, $l) { strftime($t, get_locale(era_datetime => $l), locale => $l); },
+    '%EX' => fun ($t, $l) { strftime($t, get_locale(era_time => $l), locale => $l); },
+    '%Ex' => fun ($t, $l) { strftime($t, get_locale(era_date => $l), locale => $l); },
+    '%EY' => fun ($t, $l) { strftime($t, _fmt_era(Y => $t, get_locale(era => $l)), locale => $l); },
+    '%Ey' => fun ($t, $l) { strftime($t, _fmt_era(y => $t, get_locale(era => $l)), locale => $l); },
     '%e'  => fun ($t, $l) { sprintf '%2d', $t->day; },
     '%-e' => fun ($t, $l) { $t->day; },
     '%F'  => fun ($t, $l) { strftime($t, '%Y-%m-%d', locale => $l); },
@@ -215,6 +222,27 @@ fun strftime ($t, $fmt, :$locale = 'C') {
     }
 
     return $str;
+}
+
+fun _fmt_era ($E, $t, $eras) {
+    foreach my $era (grep defined, @{ $eras }) {
+        my @fields = split /:/, $era;
+        my %s = strptime($fields[2], "%Y/%m/%d");
+        if ($t->year > $s{year}) {
+            return $fields[5] if $E eq 'Y';
+            return $fields[4] if $E eq 'C';
+            return $fields[1] + $t->year - $s{year} if $E eq 'y';
+        } elsif ($t->year == $s{year}) {
+            require Time::C;
+            my $s = Time::C->mktime(%s);
+            if ($t->epoch >= $s->epoch) {
+                return $fields[5] if $E eq 'Y';
+                return $fields[4] if $E eq 'C';
+                return $fields[1] + $t->year - $s{year} if $E eq 'y';
+            }
+        }
+    }
+    return "%$E";
 }
 
 1;
