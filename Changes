@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.020     2016-11-01 21:53:57+01:00 Europe/Stockholm
   - Fix bug in Time::D when manipulating values in negative diffs.
   - Fix synopses with small errors.
 
