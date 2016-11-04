@@ -713,6 +713,40 @@ Equivalent to C<%m/%d/%y>, e.g. C<10/30/16> - this is used mostly in the US. Int
 
 If you specify C<%-d>, it will be 1 or 2 digits if the day of the month is low enough.
 
+=item C<%E*>
+
+The C<%E*> format specifiers that are supported are:
+
+=over
+
+=item C<%Ec>
+
+Similar to C<%c>, but using an alternate way of displaying the year. See C<%EY>, C<%EC>, and C<%Ey>.
+
+=item C<%EC>
+
+Similarly to C<%C>, it (usually) describes a period longer than 1 year, depending on the locale. There are only a few locales that define this: C<ja_JP>, C<lo_LA>, and C<th_TH>; in other locales it functions like C<%C>.
+
+Taking the C<ja_JP> locale as an example, it defines a number of periods, ostensibly relating to when they got a new emperor, and these periods are what the C<%EC> represents rather than centuries like C<%C>.
+
+=item C<%EX>
+
+Similar to C<%x>, but using an alternate way of displaying the time. There are only a few locales that define this: C<lo_LA>, and C<th_TH>; in other locales it functions like C<%X>.
+
+=item C<%Ex>
+
+Similar to C<%X>, but using an alternate way of displaying the year. There are only a few locales that define this: C<ja_JP>, C<lo_LA>, and C<th_TH>; in other locales it functions like C<%x>. See C<%EY>, C<%EC>, and C<%Ey> for details on how the year is displayed.
+
+=item C<%EY>
+
+Similarly to C<%Y>, it describes a year fully, but depends on the C<%EC> and possibly the C<%Ey> of the locale. There are only a few locales that define this: C<ja_JP>, C<lo_LA>, and C<th_TH>; in other locales it functions like C<%Y>.
+
+=item C<%Ey>
+
+Similarly to C<%y>, it describes the number of years since the period, only C<%y>'s period is C<%C>, while C<%Ey>'s period is C<%EC>. There are only a few locales that define this: C<ja_JP>, C<lo_LA>, and C<th_TH>; in other locales it functions like C<%y>.
+
+=back
+
 =item C<%e>
 
 1/2 digit day of month, space padded, e.g. C<30>.
@@ -784,6 +818,44 @@ If you specify C<%-m>, it will be 1 or 2 digits if the month is low enough.
 =item C<%n>
 
 Arbitrary whitespace, like C<m/\s+/> - if used as a formatting specifier rather than a parsing specifier, it will result in a C<\n> (i.e. a newline).
+
+=item C<%O*>
+
+The C<%O*> format specifiers work like their non-C<O> counterparts, except they use an alternate set of digits for representing the number depending on the locale. Not all C<%O*> specifiers are actually supported by all locales, as some only define numbers up to a certain point. Some don't specify an alternate set of digits at all, in which case they should work I<exactly> like their non-C<O> counterparts.
+
+The C<%O*> format specifiers that are supported are:
+
+=over
+
+=item C<%OC>
+
+=item C<%Od>
+
+=item C<%Oe>
+
+=item C<%OH>
+
+=item C<%OI>
+
+=item C<%OM>
+
+=item C<%Om>
+
+=item C<%OS>
+
+=item C<%OU>
+
+=item C<%Ou>
+
+=item C<%OV>
+
+=item C<%OW>
+
+=item C<%Ow>
+
+=item C<%Oy>
+
+=back
 
 =item C<%p>
 
