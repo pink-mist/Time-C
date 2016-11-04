@@ -1,4 +1,6 @@
 {{$NEXT}}
+  - Add support for %E* and %O* format specifiers to Time::F and Time::P.
+  - Fix bug in argument passing to ->string/->strftime in Time::C.
 
 0.022     2016-11-02 12:52:24+01:00 Europe/Stockholm
   - Fix bug in Time::C->mktime where it would think things that weren't defined
