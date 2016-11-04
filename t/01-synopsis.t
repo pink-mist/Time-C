@@ -4,7 +4,7 @@ use utf8;
 
 use Test::More;
 
-plan tests => 33;
+plan tests => 46;
 
 use Time::C;
 use Time::D;
@@ -96,5 +96,26 @@ is ($until[2], "2016-11-30T00:00:00Z", 'Third time in @until correct');
 is ($until[3], "2016-12-31T00:00:00Z", 'Fourth time in @until correct');
 
 is ($r->next(), "2017-01-31T00:00:00Z", "next after until correct");
+
+my $m = Time::R->new(Time::C->new(2016), months => 1, end => Time::C->new(2017));
+my @res;
+while (my $n = $m->next()) {
+  $n->day++ while $n->day_of_week != 4;
+  push @res, $n->strftime(format => '%A %-d %B %Y'); #ex: Thursday 4 February 2016
+}
+
+is (@res, 12, "right number of thursdays in result");
+is ($res[0], "Thursday 4 February 2016", "first thursday correct");
+is ($res[1], "Thursday 3 March 2016", "second thursday correct");
+is ($res[2], "Thursday 7 April 2016", "third thursday correct");
+is ($res[3], "Thursday 5 May 2016", "fourth thursday correct");
+is ($res[4], "Thursday 2 June 2016", "fifth thursday correct");
+is ($res[5], "Thursday 7 July 2016", "sixth thursday correct");
+is ($res[6], "Thursday 4 August 2016", "seventh thursday correct");
+is ($res[7], "Thursday 1 September 2016", "eigth thursday correct");
+is ($res[8], "Thursday 6 October 2016", "ninth thursday correct");
+is ($res[9], "Thursday 3 November 2016", "tenth thursday correct");
+is ($res[10], "Thursday 1 December 2016", "eleventh thursday correct");
+is ($res[11], "Thursday 5 January 2017", "twelfth thursday correct");
 
 #done_testing;

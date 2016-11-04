@@ -45,6 +45,13 @@ use Function::Parameters qw/ :strict /;
   # "2017-01-31T00:00:00Z"
   my $next = $r->next();
 
+  # print out the first thursday of every month until January 2017
+  my $m = Time::R->new(Time::C->new(2016), months => 1, end => Time::C->new(2017));
+  while (my $n = $m->next()) {
+    $n->day++ while $n->day_of_week != 4;
+    print $n->strftime('%A %d %B %Y') . "\n"; #ex: Thursday 4 February 2016
+  }
+
 =head1 DESCRIPTION
 
 Convenient ways of handling recurrences.
