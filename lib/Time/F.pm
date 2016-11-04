@@ -119,6 +119,7 @@ my %formatter; %formatter = (
         croak "Not enough digits in alt_digits for $l to represent %OM." if @d < 60;
         return $d[$n];
     },
+    '%Op' => fun ($t, $l) { $formatter{'%p'}->($t, $l); }, # one %c spec in my_MM locale erroneously says %Op instead of %p
     '%OS' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%S'}->($t, $l);
@@ -168,6 +169,7 @@ my %formatter; %formatter = (
         croak "Not enough digits in alt_digits for $l to represent %Oy." if @d < 100;
         return $d[$n];
     },
+    '%P'  => fun ($t, $l) { $formatter{'%p'}->($t, $l); }, # a few %r specs in some locales erroneously say %P instead of %p (wal_ET, ur_PK, pa_PK, iw_IL, he_IL, en_GB, dv_MV, cy_GB)
     '%p'  => fun ($t, $l) { get_locale(am_pm => $l)->[not $t->hour < 12]; },
     '%X'  => fun ($t, $l) { strftime($t, get_locale(time => $l), locale => $l); },
     '%x'  => fun ($t, $l) { strftime($t, get_locale(date => $l), locale => $l); },

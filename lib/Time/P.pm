@@ -153,6 +153,7 @@ my %parser; %parser = (
         my $re = list2re(@d);
         return qr"(?<Om>$re)";
     },
+    '%Op' => fun (:$locale) { $parser{'%p'}->(locale => $locale); }, # one %c spec in my_MM locale erroneously says %Op instead of %p
     '%OS' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%S'}->() if not @d;
@@ -202,6 +203,7 @@ my %parser; %parser = (
         my $re = list2re(@d);
         return qr"(?<Oy>$re)";
     },
+    '%P'  => fun (:$locale) { $parser{'%p'}->(locale => $locale); }, # a few %r specs in some locales erroneously say %P instead of %p (wal_ET, ur_PK, pa_PK, iw_IL, he_IL, en_GB, dv_MV, cy_GB)
     '%p'  => fun (:$locale) {
         my @am_pm = @{ get_locale(am_pm => $locale) };
         return () unless @am_pm;
