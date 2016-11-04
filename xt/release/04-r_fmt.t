@@ -7,7 +7,7 @@ use Test::More;
 
 if (not $ENV{RELEASE_TESTING}) { plan skip_all => 'Release test should only be run on release.'; }
 
-plan tests => 142;
+plan tests => 144;
 
 use Encode qw/ decode encode /;
 use File::Share qw/ dist_file /;
@@ -45,13 +45,13 @@ sub loc_db_entries {
 
 foreach my $l (sort keys %{ $loc_db->{r_fmt} }) {
 SKIP: {
-    skip "$l => Charset issues.", 1 if in ($l => qw/ nan_TW@latin tt_RU@iqtelif sd_IN@devanagari ks_IN@devanagari /);
+    #skip "$l => Charset issues.", 1 if in ($l => qw/ nan_TW@latin tt_RU@iqtelif sd_IN@devanagari ks_IN@devanagari /);
     skip "$l => Not a proper locale.", 1 if in ($l => qw/ i18n /);
 
     my $t = Time::C->now_utc()->second_of_day(0);
 
     my $str = eval { strftime($t, '%r', locale => $l); };
-    skip "Could not strftime.", 1 if not defined $str;
+    skip "Could not strftime ($l): $@.", 1 if not defined $str;
 
     note encode 'UTF-8', "$l => $str";
     my $p = eval { Time::C->strptime($str, "%r", locale => $l); };

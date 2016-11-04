@@ -7,7 +7,7 @@ use Test::More;
 
 if (not $ENV{RELEASE_TESTING}) { plan skip_all => 'Release test should only be run on release.'; }
 
-plan tests => 268;
+plan tests => 271;
 
 use Encode qw/ decode encode /;
 use File::Share qw/ dist_file /;
@@ -19,7 +19,7 @@ use Time::C;
 use Time::P;
 use Time::F;
 
-binmode STDERR, ":encoding(UTF-8)";
+#binmode STDERR, ":encoding(UTF-8)";
 
 sub in {
     my ($n, @h) = @_;
@@ -53,7 +53,7 @@ SKIP: {
     my $t = Time::C->now_utc();
 
     my $str = eval { strftime($t, "%c", locale => $l); };
-    skip "Could not strftime.", 1 if not defined $str;
+    skip "Could not strftime ($l): $@.", 1 if not defined $str;
 
     note encode 'UTF-8', "$l => $str";
     my $p = eval { Time::C->strptime($str, "%c", locale => $l); };
@@ -68,7 +68,7 @@ SKIP: {
         } else {
             fail "$l => Correct time calculated!";
             diag sprintf("Error: %s\nStr: %s\n%s\n\n",
-              encode('UTF-8', $err),
+              $err,
               $str,
               loc_db_entries($l));
         }

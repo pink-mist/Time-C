@@ -7,7 +7,7 @@ use Test::More;
 
 if (not $ENV{RELEASE_TESTING}) { plan skip_all => 'Release test should only be run on release.'; }
 
-plan tests => 269;
+plan tests => 272;
 
 use Encode qw/ decode encode /;
 use File::Share qw/ dist_file /;
@@ -72,7 +72,7 @@ qw/ aa_ET aa_ER@saaho aa_ER aa_DJ /,
     my $t = Time::C->now_utc();
 
 		my $str = eval { strftime($t, '%X', locale => $l); };
-		skip "Could not strftime.", 1 if not defined $str;
+		skip "Could not strftime ($l): $@.", 1 if not defined $str;
 
     note encode 'UTF-8', "$l => $str";
     my $p = eval { Time::C->strptime($str, "%X", locale => $l); };

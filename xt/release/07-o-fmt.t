@@ -7,7 +7,7 @@ use Test::More;
 
 if (not $ENV{RELEASE_TESTING}) { plan skip_all => 'Release test should only be run on release.'; }
 
-plan tests => 272;
+plan tests => 6;
 
 use Encode qw/ decode encode /;
 use File::Share qw/ dist_file /;
@@ -43,17 +43,15 @@ sub loc_db_entries {
     return join "\n", @entries;
 }
 
-foreach my $l (sort keys %{ $loc_db->{d_fmt} }) {
+foreach my $l (sort keys %{ $loc_db->{alt_digits} }) {
 SKIP: {
-    skip "$l => Not a proper locale.", 1 if in ($l, qw/ i18n /);
+    my $t = Time::C->now_utc();
 
-    my $t = Time::C->now_utc()->second_of_day(0);
-
-		my $str = eval { strftime($t, '%x', locale => $l); };
-		skip "Could not strftime ($l): $@.", 1 if not defined $str;
+    my $str = eval { strftime($t, "%Y %Om %d %T", locale => $l); };
+    skip "Could not strftime.", 1 if not defined $str;
 
     note encode 'UTF-8', "$l => $str";
-    my $p = eval { Time::C->strptime($str, "%x", locale => $l); };
+    my $p = eval { Time::C->strptime($str, "%Y %Om %d %T", locale => $l); };
 
     if (defined $p) {
         cmp_ok ($p->epoch - $t->epoch, '>=', '-60', "$l => Correct time calculated!") or
