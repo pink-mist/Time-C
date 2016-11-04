@@ -234,8 +234,8 @@ my %parser; %parser = (
     '%W'  => fun () { qr"(?<W>[0-9][0-9])"; },
     '%-W' => fun () { qr"(?<W>[0-9][0-9]?)"; },
     '%w'  => fun () { qr"(?<w>[0-9])"; },
-    '%Y'  => fun () { qr"(?<Y>[0-9]{4})"; },
-    '%-Y' => fun () { qr"(?<Y>[0-9]{1,4})"; },
+    '%Y'  => fun () { qr"(?<Y>-?[0-9]{4})"; },
+    '%-Y' => fun () { qr"(?<Y>-?[0-9]{1,4})"; },
     '%y'  => fun () { qr"(?<y>[0-9][0-9])"; },
     '%-y' => fun () { qr"(?<y>[0-9][0-9]?)"; },
     '%Z'  => fun () { qr"(?<Z>\S+)"; },
@@ -376,7 +376,8 @@ fun _get_year ($struct, :$locale) {
                 my @fields = split /:/, $era;
                 next if $EC ne $fields[4];
 
-                my %s = strptime($fields[2], "%Y/%m/%d");
+                my %s = strptime($fields[2], "%-Y/%m/%d");
+                $s{year}++ if $s{year} < 1;
                 $year = $s{year};
                 $year += $Ey - $fields[1] if defined $Ey;
                 $year-- if not defined $Ey;
@@ -387,7 +388,8 @@ fun _get_year ($struct, :$locale) {
             foreach my $era (@eras) {
                 my @fields = split /:/, $era;
 
-                my %s = strptime($fields[2], "%Y/%m/%d");
+                my %s = strptime($fields[2], "%-Y/%m/%d");
+                $s{year}++ if $s{year} < 1;
                 require Time::C;
                 next if $s{year} > Time::C->now_utc()->year;
 

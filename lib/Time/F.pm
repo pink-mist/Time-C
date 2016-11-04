@@ -262,7 +262,8 @@ fun strftime ($t, $fmt, :$locale = 'C') {
 fun _fmt_era ($E, $t, $eras) {
     foreach my $era (grep defined, @{ $eras }) {
         my @fields = split /:/, $era;
-        my %s = strptime($fields[2], "%Y/%m/%d");
+        my %s = strptime($fields[2], "%-Y/%m/%d");
+        $s{year}++ if $s{year} < 1;
         if ($t->year > $s{year}) {
             return $fields[5] if $E eq 'Y';
             return $fields[4] if $E eq 'C';
