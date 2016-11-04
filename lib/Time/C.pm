@@ -841,7 +841,16 @@ If C<strptime> is used for parsing, it will be given the specified C<$strict>. D
 
 =cut
 
-method string ($t: $new_str = undef, :$format = undef, :$locale = 'C', :$strict = 1) :lvalue {
+# need to parse the @args specially since F::P can't handle the signature
+method string ($t: @args) :lvalue {
+    my ($new_str, $format, $locale, $strict) = (undef, undef, 'C', 1);
+    if (@args % 2) { $new_str = shift @args; }
+    my %args = @args;
+    $format = delete $args{format} if exists $args{format};
+    $locale = delete $args{locale} if exists $args{locale};
+    $strict = delete $args{strict} if exists $args{strict};
+    croak sprintf "In method string: no such named parameter: %s", sort keys %args if %args;
+
     $t->{tz} = 'UTC' if not defined $t->{tz};
 
     my $setter = sub {
@@ -893,7 +902,7 @@ Functions exactly like C<string>.
 
 =cut
 
-method strftime ($t: $new_str = undef, :$format = undef, :$locale = 'C', :$strict = 1) :lvalue { $t->string(@_); }
+method strftime ($t: @args) :lvalue { $t->string(@args); }
 
 =head2 year
 
