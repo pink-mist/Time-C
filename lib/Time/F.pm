@@ -70,70 +70,103 @@ my %formatter; %formatter = (
     '%m'  => fun ($t, $l) { sprintf '%02d', $t->month; },
     '%-m' => fun ($t, $l) { $t->month; },
     '%n'  => fun ($t, $l) { "\n"; },
+    '%OC' => fun ($t, $l) {
+        my @d = @{ get_locale(digits => $l) };
+        my $n = $formatter{'%C'}->($t, $l);
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %OC." if @d < 100;
+        return $d[$n];
+    },
     '%Od' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%d'}->($t, $l);
-        return @d ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %Od." if @d < 32;
+        return $d[$n];
     },
     '%Oe' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%e'}->($t, $l);
-        return @d ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %Oe." if @d < 32;
+        return $d[$n];
     },
     '%OH' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%H'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %OH." if @d < 24;
+        return $d[$n];
     },
     '%OI' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%I'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %OI." if @d < 13;
+        return$d[$n];
     },
     '%Om' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%m'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %Om." if @d < 13;
+        return $d[$n];
     },
     '%OM' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%M'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %OM." if @d < 60;
+        return $d[$n];
     },
     '%OS' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%S'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %OS." if @d < 60;
+        return $d[$n];
     },
     '%OU' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%U'}->($t, $l);
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %OU." if @d < 54;
         return @d > 31 ? $d[$n] : $n;
     },
     '%Ou' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%u'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %Ou." if @d < 8;
+        return $d[$n];
     },
     '%OV' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%V'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %OV." if @d < 54;
+        return $d[$n];
     },
     '%OW' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%W'}->($t, $l);
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %OW." if @d < 54;
         return @d > 31 ? $d[$n] : $n;
     },
     '%Ow' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%w'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %Ow." if @d < 7;
+        return $d[$n];
     },
     '%Oy' => fun ($t, $l) {
         my @d = @{ get_locale(digits => $l) };
         my $n = $formatter{'%y'}->($t, $l);
-        return @d > 31 ? $d[$n] : $n;
+        return $n if @d == 0;
+        croak "Not enough digits in alt_digits for $l to represent %Oy." if @d < 100;
+        return $d[$n];
     },
     '%p'  => fun ($t, $l) { get_locale(am_pm => $l)->[not $t->hour < 12]; },
     '%X'  => fun ($t, $l) { strftime($t, get_locale(time => $l), locale => $l); },

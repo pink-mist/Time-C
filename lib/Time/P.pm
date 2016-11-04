@@ -104,81 +104,101 @@ my %parser; %parser = (
     '%m'  => fun () { qr"(?<m>[0-9][0-9])"; },
     '%-m' => fun () { qr"(?<m>[0-9][0-9]?)"; },
     '%n'  => fun () { qr"\s+"; },
+    '%OC' => fun (:$locale) {
+        my @d = @{ get_locale(digits => $locale) };
+        return $parser{'%d'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %OC." if @d < 100;
+        my $re = list2re(@d);
+        return qr"(?<OC>$re)";
+    },
     '%Od' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%d'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %Od." if @d < 32;
         my $re = list2re(@d);
         return qr"(?<Od>$re)";
     },
     '%Oe' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%e'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %Oe." if @d < 32;
         my $re = list2re(@d);
         return qr"(?<Oe>$re)";
     },
     '%OH' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%H'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %OH." if @d < 24;
         my $re = list2re(@d);
         return qr"(?<OH>$re)";
     },
     '%OI' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%I'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %OI." if @d < 13;
         my $re = list2re(@d);
         return qr"(?<OI>$re)";
     },
     '%OM' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%M'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %OM." if @d < 60;
         my $re = list2re(@d);
         return qr"(?<OM>$re)";
     },
     '%Om' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%m'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %Om." if @d < 13;
         my $re = list2re(@d);
         return qr"(?<Om>$re)";
     },
     '%OS' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%S'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %OS." if @d < 60;
         my $re = list2re(@d);
         return qr"(?<OS>$re)";
     },
     '%OU' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%U'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %OU." if @d < 54;
         my $re = list2re(@d);
         return qr"(?<OU>$re)";
     },
     '%Ou' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%u'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %Ou." if @d < 8;
         my $re = list2re(@d);
         return qr"(?<Ou>$re)";
     },
     '%OV' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%V'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %OV." if @d < 54;
         my $re = list2re(@d);
         return qr"(?<OV>$re)";
     },
     '%OW' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%W'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %OW." if @d < 54;
         my $re = list2re(@d);
         return qr"(?<OW>$re)";
     },
     '%Ow' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%w'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %Ow." if @d < 7;
         my $re = list2re(@d);
         return qr"(?<Ow>$re)";
     },
     '%Oy' => fun (:$locale) {
         my @d = @{ get_locale(digits => $locale) };
         return $parser{'%y'}->() if not @d;
+        croak "Not enough digits in alt_digits for $locale to represent %Oy." if @d < 100;
         my $re = list2re(@d);
         return qr"(?<Oy>$re)";
     },
