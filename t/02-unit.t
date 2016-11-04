@@ -1,7 +1,8 @@
 use strict;
 use warnings;
+use utf8;
 
-use Test::More tests => 63;
+use Test::More tests => 71;
 
 use Time::Moment;
 use Time::C;
@@ -133,3 +134,20 @@ is($t->string, "1981-02-05T00:00:00Z", 'decrementing second by 3613 correct');
 is($t->offset, '0', 'initial offset correct');
 $t->offset = 120;
 is($t->string, "1981-02-05T02:00:00+02:00", 'setting offset correct');
+
+is($t->strftime(format => "%Y-%m-%d %T", locale => "en_GB", strict => 0),
+    "1981-02-05 02:00:00", "passing arguments to ->strftime correct");
+is ($t->strftime(), "1981-02-05T02:00:00+02:00", "passing no arguments to ->strftime correct");
+is ($t->strftime("1980-03-03", format => "%Y-%m-%d"),
+    "1980-03-03T02:00:00+02:00", "passing a new string and a format to ->strftime correct");
+$t->strftime(format => "%Y-%m-%d") = "1990-05-06";
+is ($t->string, "1990-05-06T02:00:00+02:00", "setting ->strftime with a format correct");
+$t->strftime(format => "%a vecka %-W %Y", locale => "sv_SE") = "mån vecka 3 2016";
+is ($t->string, "2016-01-18T02:00:00+02:00",
+    "setting ->strftime with a format and a locale correct");
+is (Time::C->strptime("mån 31 okt 2016 20:33:45", "%c", locale => "sv_SE")->strftime(format => "%c", locale => "ja_JP"),
+    "2016年10月31日 20時33分45秒", "->strptime()->strftime with different locales correct");
+my $str = Time::C->strptime("mån 31 okt 2016 20:33:45", "%c", locale => "sv_SE")->strftime(format => "%EY %m %d %X", locale => "ja_JP");
+is ($str, "平成28年 10 31 20時33分45秒", "strftime with era correct");
+is (Time::C->strptime("平成28年 10 31 20時33分45秒", "%EY %m %d %X", locale => "ja_JP")->strftime(format => "%c", locale => "sv_SE"),
+    "mån 31 okt 2016 20:33:45", "strptime with era correct");
