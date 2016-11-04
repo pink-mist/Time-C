@@ -74,15 +74,9 @@ my %parser; %parser = (
         my @eras = _get_eras(full => $locale);
         return $parser{'%Y'}->() if not @eras;
 
-        my @ret = map {
-              my @res = _compile_fmt($_, locale => $locale);
-              my $ret = shift @res;
-              foreach my $re (@res) { $ret = qr/$ret$re/; }
-              $ret;
-          } uniq @eras;
-        my $full_re = shift @ret;
-        foreach my $re (@ret) { $full_re = qr/$full_re|$re/; }
-        return $full_re;
+        my @ret = map { my $re = join "", _compile_fmt($_, locale => $locale); qr/$re/ } uniq @eras;
+        my $full_re = join "|", @ret;
+        return qr/$full_re/;
     },
     '%Ey' => fun () { qr"(?<Ey>[0-9]+)"; },
     '%e'  => fun () { qr"(?:\s(?<e>[0-9])|(?<e>[0-9][0-9]))"; },
