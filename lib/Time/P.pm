@@ -404,6 +404,8 @@ fun _get_year ($struct, :$locale) {
         my @d = @{ get_locale(digits => $locale) };
         if (defined(my $C = $struct->{C})) {
             $year = $C * 100;
+        } elsif (defined(my $OC = $struct->{OC})) {
+            $year = _get_index($OC, @d) * 100;
         } else {
             $year = 1900;
         }
