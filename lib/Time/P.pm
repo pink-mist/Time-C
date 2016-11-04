@@ -296,7 +296,7 @@ fun strptime ($str, $fmt, :$locale = 'C', :$strict = 1, :$struct = {}) {
     }
 
     if (@res) {
-        croak sprintf "Could not match '%s' using '%s'. Match failed at position %d while trying to match with %s.", $str, $fmt, pos($str), $re;
+        croak sprintf "Could not match '%s' using '%s'. Match failed at position %d (%s) while trying to match with /%s/.", $str, $fmt, pos($str), substr($str, pos($str)), $re;
     }
 
     $struct = { %$struct, _coerce_struct(\%parse, $struct, locale => $locale) };
@@ -312,13 +312,15 @@ fun _compile_fmt ($fmt, :$locale) {
     # _get_tok will increment $pos for us
     while (defined(my $tok = get_fmt_tok($fmt, $pos))) {
         if (exists $parser{$tok}) {
-            my $re = $parser{$tok}->(locale => $locale);
-            warn "pushing $re to list\n" if DEBUG;
-            push @res, $re;
+            my @p_res = $parser{$tok}->(locale => $locale);
+            warn "pushing @p_res to list\n" if DEBUG;
+            push @res, @p_res;
         } elsif ($tok =~ /^%/) {
             croak "Unsupported format specifier: $tok";
         } else {
-            push @res, qr/\Q$tok\E/;
+            my $re = qr/\Q$tok\E/;
+            warn "pushing $re to list\n" if DEBUG;
+            push @res, $re;
         }
     }
 
