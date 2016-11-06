@@ -893,7 +893,7 @@ Equivalent to C<%H:%M:%S>, e.g. C<16:07:34>.
 
 =item C<%t>
 
-Arbitrary whitespace, like C<m/\s+/> - if uses as a formatting specifier rather than a parsing specifier, it will result in a C<\t> (i.e. a tab).
+Arbitrary whitespace, like C<m/\s+/> - if used as a formatting specifier rather than a parsing specifier, it will result in a C<\t> (i.e. a tab).
 
 =item C<%U>
 
