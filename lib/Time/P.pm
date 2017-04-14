@@ -6,7 +6,7 @@ package Time::P;
 
 use Carp qw/ croak /;
 use Exporter qw/ import /;
-use Function::Parameters;
+use Function::Parameters qw/ :lax /;
 use Data::Munge qw/ list2re /;
 use List::Util qw/ uniq /;
 
