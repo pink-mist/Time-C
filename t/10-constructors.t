@@ -13,7 +13,7 @@ use Time::C;
 
 # test all the Time::C constructors thoroughly
 
-sub abs_diff { my ($x, $y, $z) = @_; return abs( $x - $y ) < $z; }
+sub abs_diff { my ($x, $y, $z) = @_; return abs( $x - $y ) <= $z; }
 
 my $epoch = time;
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) =
