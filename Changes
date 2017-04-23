@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.024     2017-04-23 15:47:34+02:00 Europe/Stockholm
   - Fix support for Function::Parameters 2, thanks mauke!
 
 0.023     2016-11-04 09:27:14+01:00 Europe/Stockholm
